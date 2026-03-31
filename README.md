@@ -11,7 +11,7 @@ Häzirki wagtda ulanylýan merkezleşdirilen ulgamlaryň gowşak taraplaryny (ý
 ## 🛠 Tehniki Binýat
 
 Model **C++** dilinde işlenip taýýarlanyldy. Saýlanyp alnan tehnologiýalar aşakdaky artykmaçlyklary üpjün edýär:
-* **Ýokary tizlik:** Maglumatlary real wagtda işlemek.
+* **Ýokary tizlik:** Maglumatlary hakyky wagtda işlemek.
 * **Low-level dolandyryş:** Resurslary we ýady netijeli ulanmak.
 * **Kriptografik bitinlik:** OpenSSL kitaphanasy arkaly ýokary derejeli gorag.
 
