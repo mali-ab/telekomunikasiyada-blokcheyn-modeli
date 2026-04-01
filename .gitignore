@@ -1,3 +1,4 @@
-old/*
-txt/*
+.env
+obj/*
+main.o
 telekom_system

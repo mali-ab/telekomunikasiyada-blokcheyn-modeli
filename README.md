@@ -1,73 +1,70 @@
 # 🌐 Telekomunikasiýada Blokçeýn Modeli (Turkmentelekom)
 
-Bu taslama **"Türkmentelekom" elektrik aragatnaşyk kompaniýasynyň** mysalynda, telekommunikasiýa hyzmatlarynda maglumat howpsuzlygyny üpjün etmek we amallary awtomatlaşdyrmak üçin blokçeýn tehnologiýasyny ulanmagyň amaly modelidir.
+Bu taslama **"Türkmentelekom" elektrik aragatnaşyk kompaniýasynyň** mysalynda, hyzmatlary dolandyrmak, tölegleri awtomatlaşdyrmak we maglumat howpsuzlygyny üpjün etmek üçin işlenip düzülen **Paýlanan Reýestr Tehnologiýasy (DLT)** modelidir.
 
 ## 📌 Taslamanyň Maksady
 
-Häzirki wagtda ulanylýan merkezleşdirilen ulgamlaryň gowşak taraplaryny (ýeke-täk şowsuzlyk nokady, maglumatlaryň manipulýasiýasy) aradan aýyrmak we abonent maglumatlarynyň bitinligini kriptografik usullar arkaly goramak.
+Merkezleşdirilen ulgamlardaky "ýeke-täk şowsuzlyk nokady" (Single Point of Failure) meselesini aradan aýyrmak, abonent maglumatlarynyň manipulýasiýasyny bökdemek we **RSA + SHA-256** algoritmleri arkaly tranzaksiýalaryň ynamlylygyny üpjün etmek.
 
 ---
 
-## 🛠 Tehniki Binýat
+## 🛠 Tehniki Binýat we Arhitektura
 
-Model **C++** dilinde işlenip taýýarlanyldy. Saýlanyp alnan tehnologiýalar aşakdaky artykmaçlyklary üpjün edýär:
-* **Ýokary tizlik:** Maglumatlary hakyky wagtda işlemek.
-* **Low-level dolandyryş:** Resurslary we ýady netijeli ulanmak.
-* **Kriptografik bitinlik:** OpenSSL kitaphanasy arkaly ýokary derejeli gorag.
+Taslama döwrebap C++ standartlarynda (C++17) we modully binýatda guraldy:
 
-### Esasy Komponentler
-1.  **Block Moduly:** Maglumatlary, wagt belgisini (timestamp) we öňki bloguň heş-koduny (hash) saklaýar.
-2.  **SHA-256 Algoritmi:** Maglumatlaryň üýtgedilmezligini üpjün edýän esasy kriptografik gural.
-3.  **Akylly Şertnamalar (Smart Contracts):** Tölegleri we hyzmatlary adam gatnaşygyndan daşary awtomatlaşdyrmak.
+* **Backend:** C++ (Ýokary tizlik we resurs dolandyryşy).
+* **Database:** PostgreSQL (Abonent maglumatlarynyň hemişelik saklanmagy).
+* **Networking:** Boost.Asio (P2P düwünleriniň arasynda asinhron habarlaşyk).
+* **Cryptography:** OpenSSL (SHA-256 we RSA kriptografik gorag).
 
----
-
-## 📊 Ykdysady we Tehniki Netijelilik
-
-| Görkeziji | Merkezleşdirilen Ulgam | Blokçeýn Modeli |
-| :--- | :--- | :--- |
-| **Maglumat saklanyşy** | Ýeke-täk merkezi serwer | Paýlanan reýestr (DLT) |
-| **Töleg tassyklanyşy** | El bilen (Operator) | Awtomatiki (Smart Contract) |
-| **Durnuklylyk** | Pes (Single point of failure) | Örän ýokary (Decentralized) |
-| **Admin Harajatlary** | Standart | **30-40% tygşytlylyk** |
-
-### Howpsuzlyk Formulasy
-Ulgamyň haker hüjümlerine durnuklylygy $51\%$ hüjümine garşy ähtimallyklar nazaryýeti bilen hasaplanýar:
-
-$$P = \sum_{k=\lceil n/2 \rceil}^{n} \binom{n}{k} p^k (1-p)^{n-k}$$
-
-*Bellik: Düwünleriň sany ($n$) artdygyça, ulgamyň döwülme ähtimallygy nola ýakynlaşýar.*
+### Esasy Gatlaklar (Layers)
+1.  **Maglumat Gatlagy (Blockchain):** Bloklaryň zynjyryny we PoW (Proof of Work) mining prosesini dolandyrýar.
+2.  **Howpsuzlyk Gatlagy (Digital Signature):** RSA algoritmi arkaly tranzaksiýalaryň hakykylygyny tassyklaýar.
+3.  **Amallar Gatlagy (Smart Contract):** Internet, IP-TV we Telefon hyzmatlarynyň töleg şertlerini awtomatiki barlaýar.
+4.  **Tor Gatlagy (P2P Node):** Täze bloklary tordaky beýleki düwünlere (peers) hakyky wagtda ýaýradýar.
 
 ---
 
-## 📂 Faýllaryň Gurluşy (File Structure)
+## 📂 Taslamanyň Gurluşy (Project Tree)
 
-Taslama modully arhitekturada gurlan bolup, her bir faýl aýratyn gatlaga jogap berýär:
-
-* **`blockchain.cpp / .h`**: **Maglumat gatlagy.** Bloklary döretmek we zynjyryň bitinligini saklamak üçin jogapkär.
-* **`signature.cpp / .h`**: **Howpsuzlyk gatlagy.** Abonentleriň şahsy we köpçülikleýin açarlary arkaly sanly gol çekmek mehanizmini amala aşyrýar.
-* **`smartContract.cpp / .h`**: **Amallar gatlagy.** Hyzmatlaryň (internet, töleg) awtomatiki işjeňleşmegini dolandyrýar.
-* **`main.cpp`**: Ähli modullary birleşdirýän we ulgamyň işleyiş siklini görkezýän esasy faýl.
+```text
+Turkmentelekom_Blockchain/
+├── include/              # Header faýllary (.h)
+│   ├── blockchain.h      # Blokçeýn gurluşy
+│   ├── database.h        # PostgreSQL Singleton Manager
+│   ├── p2p.h             # Boost.Asio P2P Düwüni
+│   ├── signature.h       # RSA Kriptografiýa
+│   └── smartContract.h   # Akylly şertnama logikasy
+├── src/                  # Amala aşyryş faýllary (.cpp)
+│   ├── blockchain.cpp
+│   ├── database.cpp
+│   ├── p2p.cpp
+│   ├── signature.cpp
+│   └── smartContract.cpp
+├── .env                  # DB sazlamalary (DB_NAME, DB_PASS we s.m.)
+├── main.cpp              # Programmanyň girişi we interaktiw menýu
+├── Makefile              # Awtomatiki build ulgamy
+└── README.md             # Dokumentasiýa
+```
 
 ---
 
 ## 🚀 Gurnama we Işletmek
 
-### Gerekli kitaphanalar
-Kody işletmek üçin ulgamyňyzda **OpenSSL** kitaphanasynyň gurnalan bolmagy gerek.
-
-**Linux (Ubuntu/Debian):**
+### 1. Gerekli kitaphanalar (Dependencies)
+Linux (Ubuntu/Debian) ulgamynda aşakdaky buýrugy işlediň:
 ```bash
 sudo apt-get update
-sudo apt-get install libssl-dev
+sudo apt-get install libssl-dev libpqxx-dev postgresql libboost-all-dev
 ```
 
-### Kompilýasiýa we Işletmek
-Taslamany awtomatiki birleşdirmek we işletmek üçin:
+### 2. Maglumat bazasyny sazlamak
+PostgreSQL-de `telekom_db` bazasyny dörediň we `.env` faýlynda öz paroluňyzy giriziň.
 
+### 3. Kompilýasiýa we Işletmek
 ```bash
-# Programmany gurmak
-make
+# Programmany arassalamak we gurmak
+make clean && make
 
 # Programmany işletmek
 ./telekom_system
@@ -75,7 +72,18 @@ make
 
 ---
 
-## 📈 Geljekdäki Ösüşler
-* **P2P Tor:** `boost::asio` ulanyp, düwünleriň arasynda hakyky wagtly maglumat alyş-çalyşygyny goşmak.
-* **Maglumat Bazasy:** Bloklary hemişelik saklamak üçin `LevelDB` ýa-da `SQLite` integrasiýasy.
-* **Sanly Gol:** ECDSA algoritmi arkaly abonentleriň tranzaksiýalaryna has çylşyrymly gol çekmek ulgamyny kämilleşdirmek.
+## 📊 Tehniki Netijelilik we Howpsuzlyk
+
+### Ulgamyň Durnuklylygy
+Ulgamyň haker hüjümlerine durnuklylygy düwünleriň sany ($n$) we mining kynlygy ($d$) bilen baglylykda ähtimallyklar nazaryýeti arkaly hasaplanýar:
+
+$$P = \sum_{k=\lceil n/2 \rceil}^{n} \binom{n}{k} p^k (1-p)^{n-k}$$
+
+*Bellik: Paýlanan ulgamda maglumaty üýtgetmek üçin tordaky düwünleriň 51%-inden gowragyny ele geçirmek gerek, bu bolsa amaly taýdan imkansyzdyr.*
+
+---
+
+## 👨‍💻 Operatoryň Ulanyş Gollanmasy
+1. **Port Saýlawy:** Programma açylanda lokal porty (mysal üçin: 8080) giriziň.
+2. **P2P Birikme:** Tordaky beýleki operatora birikmek üçin onuň IP-sini we portuny giriziň.
+3. **Hyzmat Aktiwleşdirmek:** Abonent adyny we töleg mukdaryny giriziň. Akylly şertnama tölegi tassyklasa, täze blok dörediler we torda ýaýradylar.
