@@ -69,7 +69,7 @@ string Abonent::getHyzmatynAdy(HyzmatType h) const {
 string Abonent::getTransactionData(HyzmatType h, double toleg) const {
     string hyzAdy = getHyzmatynAdy(h);
     double hyzBaha = (h == HyzmatType::INTERNET) ? internet.getBaha() : (h == HyzmatType::IPTV ? iptv.getBaha() : telefon.getBaha());
-    return "Abonent: " + ady + ", Hyzmat: " + hyzAdy + ", Onki balans: " + to_string(balans) + ", Toleg: " + to_string(toleg) + ", Baha: " + to_string(hyzBaha) + ", Taze balans: " + to_string(balans + toleg - hyzBaha) + " TMT";
+    return "Abonent: " + ady + ", Hyzmat: " + hyzAdy + ", Onki balans: " + to_string(balans) + ", Toleg: " + to_string(toleg) + ", Baha: " + to_string(hyzBaha) + ", Taze balans: " + to_string(balans + toleg - hyzBaha) + " TMT, Wagty: " + SmartContract::häzirkiWagtyAl();
 }
 
 bool SmartContract::hyzmatyIslet(Abonent &abonent, double toleg, HyzmatType hyzmat) {

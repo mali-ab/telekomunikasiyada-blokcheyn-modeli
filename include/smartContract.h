@@ -83,8 +83,6 @@ public:
     static void updateAbonentInDB(const Abonent &abonent);
     static bool getAbonentFromDB(const string ady, Abonent &abonent);
     static void fullSystemAudit(const Blockchain &bc);
-
-private:
     static string häzirkiWagtyAl();
 };
 
