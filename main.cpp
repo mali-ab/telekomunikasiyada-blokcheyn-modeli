@@ -53,7 +53,9 @@ int main() {
             cout << "4. IPTV sanyny üýtgetmek" << endl;
             cout << "5. Aktiw P2P düwünlerini görkez (List Peers)" << endl;
             cout << "6. Zynjyry gorkez" << endl;
-            cout << "7. Programmadan çykmak" << endl;
+            cout << "7. Zynjyry barlamak (Audit Chain)" << endl;
+            cout << "8. Ahli ulanyjylaryn balansyny barlamak (Full Audit)" << endl;
+            cout << "9. Programmadan çykmak" << endl;
             cout << "Saýlawyňyz: ";
 
             int anaSaylaw;
@@ -64,7 +66,17 @@ int main() {
             }
             cin.ignore(); 
 
-            if (anaSaylaw == 7) break;
+            if (anaSaylaw == 9) break;
+
+            if (anaSaylaw == 8) {
+                SmartContract::fullSystemAudit(telekomBC);
+                continue;
+            }
+
+            if (anaSaylaw == 7) {
+                telekomBC.fullAudit();
+                continue;
+            }
 
             if (anaSaylaw == 6) {
                 telekomBC.listAllBlocks();
@@ -177,7 +189,7 @@ int main() {
 
                 RSAKeys keys = DigitalSignature::generateKeys(); 
                 string hyzmatAdy = (saylaw == 1) ? "Internet" : (saylaw == 2 ? "IPTV" : "Telefon");
-                string transactionData = "Abonent: " + abonentAdy + ", Hyzmat: " + hyzmatAdy + ", Toleg: " + to_string(girizilenToleg) + " TMT";
+                string transactionData = "Abonent: " + abonentAdy + ", Hyzmat: " + hyzmatAdy + ", Toleg: " + to_string(girizilenToleg) + " TMT, Hyzmatyn bahasy: " + to_string((saylaw == 1) ? ulanyjy.internet.getBaha() : (saylaw == 2 ? ulanyjy.iptv.getBaha() : ulanyjy.telefon.getBaha())) + " TMT";
 
                 vector<long long> signature = DigitalSignature::encrypt(transactionData, keys.d, keys.n);
                 string decryptedData = DigitalSignature::decrypt(signature, keys.e, keys.n);

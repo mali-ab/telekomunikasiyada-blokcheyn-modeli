@@ -123,3 +123,47 @@ void Blockchain::listAllBlocks() const {
     }
     cout << "-------------------\n" << endl;
 }
+
+vector<Block> Blockchain::getAllBlocks() const {
+    return vChain;
+}
+
+bool Blockchain::isChainValid(size_t i) {
+    if (i == 0 || i >= vChain.size()) return true; 
+
+    const Block &currentBlock = vChain[i];
+    const Block &prevBlock = vChain[i - 1];
+
+    if (currentBlock.sHash != currentBlock.CalculateHash()) {
+        cout << "[HACK ALERT]: Blok " << i << " maglumaty ýa-da heşi üýtgedilen!" << endl;
+        return false;
+    }
+
+    if (currentBlock.sPrevHash != prevBlock.sHash) {
+        cout << "[HACK ALERT]: Blok " << i << " zynjyrdan üzülen (PrevHash mismatch)!" << endl;
+        return false;
+    }
+
+    return true;
+}
+
+bool Blockchain::fullAudit() {
+    bool totalValid = true;
+
+    if (vChain.empty()) return true;
+
+    for (size_t i = 1; i < vChain.size(); i++) {
+        if (!isChainValid(i)) {
+            totalValid = false;
+            break; 
+        }
+    }
+
+    if (totalValid) {
+        cout << "[AUDIT]: Blokçeýn zynjyry doly bitin we ygtybarly." << endl;
+    } else {
+        cout << "[CRITICAL]: Blokçeýn zynjyrynda manipulýasiýa anyklandy!" << endl;
+    }
+
+    return totalValid;
+}

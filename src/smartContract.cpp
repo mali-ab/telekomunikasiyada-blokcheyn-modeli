@@ -155,3 +155,55 @@ bool SmartContract::getAbonentFromDB(string ady, Abonent &abonent) {
     }
     return false; 
 }
+
+void SmartContract::fullSystemAudit(const Blockchain& bc) {
+    map<string, double> realBalances;
+
+    for (auto& block : bc.getAllBlocks()) {
+        string data = block.sData;
+
+        size_t namePos = data.find("Abonent: ");
+        size_t commaPos = data.find(",", namePos);
+        
+        if (namePos != string::npos && commaPos != string::npos) {
+            string ady = data.substr(namePos + 9, commaPos - (namePos + 9));
+
+            size_t payPos = data.find("Toleg: ");
+            size_t tmtPos1 = data.find(" TMT", payPos);
+
+            size_t hyzBahPos = data.find("Hyzmatyn bahasy: ");
+            size_t tmtPos2 = data.find(" TMT", hyzBahPos);
+
+            if (payPos != string::npos && tmtPos1 != string::npos && 
+                hyzBahPos != string::npos && tmtPos2 != string::npos) {
+                
+                try {
+                    string tolegStr = data.substr(payPos + 7, tmtPos1 - (payPos + 7));
+                    string hyzBahaStr = data.substr(hyzBahPos + 17, tmtPos2 - (hyzBahPos + 17));
+                    
+                    double tolegJemi = stod(tolegStr);
+                    double hyzmatBaha = stod(hyzBahaStr);
+                    
+                    realBalances[ady] += (tolegJemi - hyzmatBaha); 
+                    
+                } catch (...) {
+                    continue;
+                }
+            }
+        }
+    }
+
+    pqxx::connection* C = DatabaseManager::getConnection();
+    pqxx::nontransaction N(*C);
+    pqxx::result R = N.exec("SELECT ady, balans FROM abonents");
+    for (auto row : R) {
+        string ady = row["ady"].as<string>();
+        double dbBalans = row["balans"].as<double>();
+        
+        if (dbBalans != realBalances[ady]) {
+            cout << "[CRITICAL]: " << ady << " balansy galp! Bazada: " 
+                 << dbBalans << ", Blokçeýnde: " << realBalances[ady] << endl;
+        }
+    }
+    cout << "[AUDIT COMPLETE]: Ähli abonentleriň balanslary barlandy." << endl;
+}

@@ -6,6 +6,8 @@
 #include <vector>
 #include <memory>
 #include <iomanip>
+#include <map>
+#include "blockchain.h"
 
 namespace pqxx { class connection; }
 
@@ -78,6 +80,7 @@ public:
 
     static void updateAbonentInDB(const Abonent &abonent);
     static bool getAbonentFromDB(const string ady, Abonent &abonent);
+    static void fullSystemAudit(const Blockchain &bc);
 
 private:
     static string häzirkiWagtyAl();

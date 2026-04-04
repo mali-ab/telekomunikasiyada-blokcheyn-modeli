@@ -39,6 +39,9 @@ public:
     void saveBlockToPostgres(const Block &bNew);
     Block getLatestBlock() const;
     void listAllBlocks() const;
+    vector<Block> getAllBlocks() const;
+    bool isChainValid(size_t i);
+    bool fullAudit();
 
 private:
     uint32_t nDifficulty = 3;
