@@ -70,7 +70,6 @@ RSAKeys DigitalSignature::generateKeys() {
     return {n, e, d};
 }
 
-// RSA Şifrlemek: C = M^e mod N
 vector<long long> DigitalSignature::encrypt(string data, long long d, long long n) {
     vector<long long> cipher;
     for (char c : data) {
@@ -79,7 +78,6 @@ vector<long long> DigitalSignature::encrypt(string data, long long d, long long 
     return cipher;
 }
 
-// RSA Şifrini açmak: M = C^d mod N
 string DigitalSignature::decrypt(vector<long long> cipher, long long e, long long n) {
     string msg = "";
     for (long long c : cipher) {

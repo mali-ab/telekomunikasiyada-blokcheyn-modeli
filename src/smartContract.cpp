@@ -69,7 +69,7 @@ string Abonent::getHyzmatynAdy(HyzmatType h) const {
 string Abonent::getTransactionData(HyzmatType h, double toleg) const {
     string hyzAdy = getHyzmatynAdy(h);
     double hyzBaha = (h == HyzmatType::INTERNET) ? internet.getBaha() : (h == HyzmatType::IPTV ? iptv.getBaha() : telefon.getBaha());
-    return "Abonent: " + ady + ", Hyzmat: " + hyzAdy + ", Onki balans: " + to_string(balans) + ", Toleg: " + to_string(toleg) + ", Baha: " + to_string(hyzBaha) + ", Taze balans: " + to_string(balans + toleg - hyzBaha) + " TMT, Wagty: " + SmartContract::häzirkiWagtyAl();
+    return "Abonent: " + ady + ", Hyzmat: " + hyzAdy + ", Onki balans: " + to_string(balans) + " TMT, Toleg: " + to_string(toleg) + " TMT, Baha: " + to_string(hyzBaha) + " TMT, Wagty: " + SmartContract::häzirkiWagtyAl();
 }
 
 bool SmartContract::hyzmatyIslet(Abonent &abonent, double toleg, HyzmatType hyzmat) {
@@ -184,10 +184,10 @@ void SmartContract::fullSystemAudit(const Blockchain& bc) {
             string ady = data.substr(namePos + 9, commaPos - (namePos + 9));
 
             size_t payPos = data.find("Toleg: ");
-            size_t tmtPos1 = data.find(",", payPos);
+            size_t tmtPos1 = data.find(" TMT", payPos);
 
             size_t hyzBahPos = data.find("Baha: ");
-            size_t tmtPos2 = data.find(",", hyzBahPos);
+            size_t tmtPos2 = data.find(" TMT", hyzBahPos);
 
             if (payPos != string::npos && tmtPos1 != string::npos && 
                 hyzBahPos != string::npos && tmtPos2 != string::npos) {
