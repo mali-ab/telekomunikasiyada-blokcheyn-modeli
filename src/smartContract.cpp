@@ -57,6 +57,21 @@ int Abonent::galanGun(const string &wagt) const {
     return (gecenGunler < 30) ? (30 - gecenGunler) : 0;
 }
 
+string Abonent::getHyzmatynAdy(HyzmatType h) const {
+    switch (h) {
+        case HyzmatType::INTERNET: return "Internet " + internet.tizlik + " Mbit/s";
+        case HyzmatType::IPTV: return "IPTV " + to_string(iptv.tvSany) + " sany";
+        case HyzmatType::TELEFON: return "Telefon";
+        default: return "N/A";
+    }
+}
+
+string Abonent::getTransactionData(HyzmatType h, double toleg) const {
+    string hyzAdy = getHyzmatynAdy(h);
+    double hyzBaha = (h == HyzmatType::INTERNET) ? internet.getBaha() : (h == HyzmatType::IPTV ? iptv.getBaha() : telefon.getBaha());
+    return "Abonent: " + ady + ", Hyzmat: " + hyzAdy + ", Onki balans: " + to_string(balans) + ", Toleg: " + to_string(toleg) + ", Baha: " + to_string(hyzBaha) + ", Taze balans: " + to_string(balans + toleg - hyzBaha) + " TMT";
+}
+
 bool SmartContract::hyzmatyIslet(Abonent &abonent, double toleg, HyzmatType hyzmat) {
     double baha = 0;
     string hyzmatAdy = "";
@@ -169,17 +184,17 @@ void SmartContract::fullSystemAudit(const Blockchain& bc) {
             string ady = data.substr(namePos + 9, commaPos - (namePos + 9));
 
             size_t payPos = data.find("Toleg: ");
-            size_t tmtPos1 = data.find(" TMT", payPos);
+            size_t tmtPos1 = data.find(",", payPos);
 
-            size_t hyzBahPos = data.find("Hyzmatyn bahasy: ");
-            size_t tmtPos2 = data.find(" TMT", hyzBahPos);
+            size_t hyzBahPos = data.find("Baha: ");
+            size_t tmtPos2 = data.find(",", hyzBahPos);
 
             if (payPos != string::npos && tmtPos1 != string::npos && 
                 hyzBahPos != string::npos && tmtPos2 != string::npos) {
                 
                 try {
                     string tolegStr = data.substr(payPos + 7, tmtPos1 - (payPos + 7));
-                    string hyzBahaStr = data.substr(hyzBahPos + 17, tmtPos2 - (hyzBahPos + 17));
+                    string hyzBahaStr = data.substr(hyzBahPos + 6, tmtPos2 - (hyzBahPos + 6));
                     
                     double tolegJemi = stod(tolegStr);
                     double hyzmatBaha = stod(hyzBahaStr);

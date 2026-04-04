@@ -72,6 +72,8 @@ struct Abonent {
     Abonent(string adyData);
 
     int galanGun(const string& wagt) const;
+    string getHyzmatynAdy(HyzmatType h) const;
+    string getTransactionData(HyzmatType h, double toleg) const;
 };
 
 class SmartContract {

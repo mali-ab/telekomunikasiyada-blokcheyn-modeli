@@ -48,7 +48,7 @@ int main() {
         while (true) {
             cout << "\n--- ESASY MENYU (Lokal Port: " << localPort << ") ---" << endl;
             cout << "1. Täze töleg" << endl;
-            cout << "2. Abonent maglumatlary" << endl;
+            cout << "2. Abonent maglumatlary. Yok bolsa doretmek" << endl;
             cout << "3. Internet tizligini üýtgetmek" << endl;
             cout << "4. IPTV sanyny üýtgetmek" << endl;
             cout << "5. Aktiw P2P düwünlerini görkez (List Peers)" << endl;
@@ -187,17 +187,15 @@ int main() {
                     cin.clear(); cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
 
-                RSAKeys keys = DigitalSignature::generateKeys(); 
-                string hyzmatAdy = (saylaw == 1) ? "Internet" : (saylaw == 2 ? "IPTV" : "Telefon");
-                string transactionData = "Abonent: " + abonentAdy + ", Hyzmat: " + hyzmatAdy + ", Toleg: " + to_string(girizilenToleg) + " TMT, Hyzmatyn bahasy: " + to_string((saylaw == 1) ? ulanyjy.internet.getBaha() : (saylaw == 2 ? ulanyjy.iptv.getBaha() : ulanyjy.telefon.getBaha())) + " TMT";
+                HyzmatType hGornus = static_cast<HyzmatType>(saylaw);
+                string transactionData = ulanyjy.getTransactionData(hGornus,girizilenToleg);
 
+                RSAKeys keys = DigitalSignature::generateKeys();
                 vector<long long> signature = DigitalSignature::encrypt(transactionData, keys.d, keys.n);
                 string decryptedData = DigitalSignature::decrypt(signature, keys.e, keys.n);
 
                 if (decryptedData == transactionData) {
                     cout << "[INFO]: RSA TASSYKLANDY." << endl;
-                    
-                    HyzmatType hGornus = static_cast<HyzmatType>(saylaw);
                     
                     if (SmartContract::hyzmatyIslet(ulanyjy, girizilenToleg, hGornus)) {
                         telekomBC.AddBlock(Block(1, transactionData));
