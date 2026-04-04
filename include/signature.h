@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <fstream>
 
 using namespace std;
 
@@ -22,8 +23,12 @@ public:
     static long long selectRandomPrime(const vector<long long>& primes);
     
     static RSAKeys generateKeys();
-    static vector<long long> encrypt(string data, long long e, long long n);
-    static string decrypt(vector<long long> cipher, long long d, long long n);
+    static vector<long long> encrypt(string data, long long d, long long n);
+    static string decrypt(vector<long long> cipher, long long e, long long n);
+    
+    static void saveKeys(const RSAKeys& keys, const string& filename);
+    static bool loadKeys(RSAKeys& keys, const string& filename);
+    static RSAKeys getKeys(const string& filename = "keys.txt");
 };
 
 #endif

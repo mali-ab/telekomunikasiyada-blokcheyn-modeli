@@ -1,4 +1,5 @@
 .env
 obj/*
 main.o
+keys*.txt
 telekom_system

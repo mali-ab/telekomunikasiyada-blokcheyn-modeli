@@ -71,19 +71,54 @@ RSAKeys DigitalSignature::generateKeys() {
 }
 
 // RSA Şifrlemek: C = M^e mod N
-vector<long long> DigitalSignature::encrypt(string data, long long e, long long n) {
+vector<long long> DigitalSignature::encrypt(string data, long long d, long long n) {
     vector<long long> cipher;
     for (char c : data) {
-        cipher.push_back(power(c, e, n));
+        cipher.push_back(power(c, d, n));
     }
     return cipher;
 }
 
 // RSA Şifrini açmak: M = C^d mod N
-string DigitalSignature::decrypt(vector<long long> cipher, long long d, long long n) {
+string DigitalSignature::decrypt(vector<long long> cipher, long long e, long long n) {
     string msg = "";
     for (long long c : cipher) {
-        msg += (char)power(c, d, n);
+        msg += (char)power(c, e, n);
     }
     return msg;
+}
+
+void DigitalSignature::saveKeys(const RSAKeys& keys, const string& filename) {
+    ofstream file(filename);
+    if (file.is_open()) {
+        file << keys.e << " " << keys.d << " " << keys.n;
+        file.close();
+    }
+}
+
+bool DigitalSignature::loadKeys(RSAKeys& keys, const string& filename) {
+    ifstream file(filename);
+    if (file.is_open()) {
+        if (file >> keys.e >> keys.d >> keys.n) {
+            file.close();
+            return true;
+        }
+        file.close();
+    }
+    return false;
+}
+
+RSAKeys DigitalSignature::getKeys(const string& filename) {
+    RSAKeys currentKeys;
+    
+    if (loadKeys(currentKeys, filename)) {
+        cout << "[INFO]: Açarlar faýldan ýüklendi: " << filename << endl;
+        return currentKeys;
+    } else {
+        cout << "[WARNING]: Faýl tapylmady. Täze RSA açarlary döredilýär..." << endl;
+        RSAKeys newKeys = generateKeys();
+        saveKeys(newKeys, filename);
+        cout << "[SUCCESS]: Täze açarlar döredildi we saklandy: " << filename << endl;
+        return newKeys;
+    }
 }

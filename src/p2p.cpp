@@ -1,4 +1,5 @@
 #include "p2p.h"
+#include "signature.h"
 
 P2PNode::P2PNode(int port, Blockchain &bc) : port_(port), telekomBC(bc), acceptor_(io_context_, tcp::endpoint(tcp::v4(), port)) {}
 
@@ -41,17 +42,41 @@ void P2PNode::do_read(std::shared_ptr<tcp::socket> socket) {
 
 void P2PNode::handle_incoming_block(std::string message) {
     if (message.find("NEW_BLOCK|") == 0) {
-        std::string data = message.substr(10); // Prefiksi aýyr
-        
-        // 1. Lokal zynjyra goşmak
-        Block tazeBlok(telekomBC.getLatestBlock().getIndex() + 1, data);
-        telekomBC.AddBlock(tazeBlok);
-        
-        // TODO:
-        // 2. PostgreSQL-e hem hemişelik ýazmak (Sinxronizasiýa)
-        // Bu ýerde tranzaksiýa maglumatyndan (data) abonent adyny we tölegi alyp bazany täzelemek bolar
-        std::cout << "\n[P2P SYNC]: Tordan täze blok alyndy we ähli düwünlerde sinxronlandy!" << std::endl;
-        std::cout << "[DATA]: " << data << std::endl;
+        try {
+            std::string raw = message.substr(10);
+            std::stringstream ss(raw);
+            std::string data, sigStr, eStr, nStr;
+            std::cout<<ss.str()<<std::endl;
+
+            if (!std::getline(ss, data, '|') || 
+                !std::getline(ss, sigStr, '|') || 
+                !std::getline(ss, eStr, '|') || 
+                !std::getline(ss, nStr, '|')) {
+                throw std::invalid_argument("Habar formaty däl");
+            }
+
+            std::vector<long long> receivedSig;
+            std::stringstream sigSS(sigStr);
+            std::string segment;
+            while (std::getline(sigSS, segment, ',')) {
+                if (!segment.empty()) {
+                    receivedSig.push_back(std::stoll(segment));
+                }
+            }
+
+            long long pubE = std::stoll(eStr);
+            long long modN = std::stoll(nStr);
+
+            std::string decrypted = DigitalSignature::decrypt(receivedSig, pubE, modN);
+
+            if (decrypted == data) {
+                std::cout << "[P2P]: Tassyklandy." << std::endl;
+                telekomBC.AddBlock(Block(telekomBC.getLatestBlock().getIndex() + 1, data));
+            }
+
+        } catch (const std::exception& e) {
+            std::cerr << "[P2P ERROR]: Gelýän blokda näsazlyk: " << e.what() << std::endl;
+        }
     }
 }
 

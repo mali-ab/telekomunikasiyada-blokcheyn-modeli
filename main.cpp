@@ -190,18 +190,24 @@ int main() {
                 HyzmatType hGornus = static_cast<HyzmatType>(saylaw);
                 string transactionData = ulanyjy.getTransactionData(hGornus,girizilenToleg);
 
-                RSAKeys keys = DigitalSignature::generateKeys();
+                RSAKeys keys = DigitalSignature::getKeys("keys_"+ulanyjy.ady+".txt");
                 vector<long long> signature = DigitalSignature::encrypt(transactionData, keys.d, keys.n);
                 string decryptedData = DigitalSignature::decrypt(signature, keys.e, keys.n);
+
+                string sigStr = "";
+                for (size_t i = 0; i < signature.size(); i++) {
+                    sigStr += to_string(signature[i]);
+                    if (i < signature.size() - 1) sigStr += ","; 
+                }
 
                 if (decryptedData == transactionData) {
                     cout << "[INFO]: RSA TASSYKLANDY." << endl;
                     
-                    if (SmartContract::hyzmatyIslet(ulanyjy, girizilenToleg, hGornus)) {
-                        telekomBC.AddBlock(Block(1, transactionData));
-                        myNode.broadcast_message("NEW_BLOCK|" + transactionData);
-                        cout << "[SUCCESS]: Blok torda ýaýradyldy." << endl;
-                    }
+                    SmartContract::hyzmatyIslet(ulanyjy, girizilenToleg, hGornus);
+                    telekomBC.AddBlock(Block(1, transactionData));
+                    string p2pMsg = "NEW_BLOCK|" + transactionData + "|" + sigStr + "|" + to_string(keys.e) + "|" + to_string(keys.n);
+                    myNode.broadcast_message(p2pMsg);
+                    cout << "[SUCCESS]: Blok torda ýaýradyldy." << endl;
                 } else {
                     cout << "[ERROR]: Kriptografik barlag şowsuz!" << endl;
                 }
