@@ -25,12 +25,11 @@ public:
 class InternetHyzmaty : public HyzmatBase {
 public:
     string tizlik;
-    InternetHyzmaty(string t = "0") : tizlik(t) {}
+    InternetHyzmaty(string t = "1") : tizlik(t) {}
 
     bool setTizlik(const string &newTizlik);
     
     double getBaha() const override {
-        if (tizlik == "0") return 0.0;
         if (tizlik == "1") return 150.0;
         if (tizlik == "2") return 180.0;
         if (tizlik == "4") return 230.0;
@@ -43,7 +42,7 @@ public:
 class IPTVHyzmaty : public HyzmatBase {
 public:
     int tvSany;
-    IPTVHyzmaty(int s = 0) : tvSany(s) {}
+    IPTVHyzmaty(int s = 1) : tvSany(s) {}
     
     bool setTVsany(int newTVsany);
     

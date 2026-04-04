@@ -46,7 +46,6 @@ void P2PNode::handle_incoming_block(std::string message) {
             std::string raw = message.substr(10);
             std::stringstream ss(raw);
             std::string data, sigStr, eStr, nStr;
-            std::cout<<ss.str()<<std::endl;
 
             if (!std::getline(ss, data, '|') || 
                 !std::getline(ss, sigStr, '|') || 
