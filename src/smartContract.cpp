@@ -57,6 +57,15 @@ int Abonent::galanGun(const string &wagt) const {
     return (gecenGunler < 30) ? (30 - gecenGunler) : 0;
 }
 
+bool Abonent::hyzmatIşjeňmi(HyzmatType h) const {
+    switch (h) {
+        case HyzmatType::INTERNET: return galanGun(internetWagty) > 0;
+        case HyzmatType::IPTV: return galanGun(iptvWagty) > 0;
+        case HyzmatType::TELEFON: return galanGun(telefonWagty) > 0;
+        default: return false;
+    }
+}
+
 string Abonent::getHyzmatynAdy(HyzmatType h) const {
     switch (h) {
         case HyzmatType::INTERNET: return "Internet " + internet.tizlik + " Mbit/s";
@@ -68,8 +77,21 @@ string Abonent::getHyzmatynAdy(HyzmatType h) const {
 
 string Abonent::getTransactionData(HyzmatType h, double toleg) const {
     string hyzAdy = getHyzmatynAdy(h);
-    double hyzBaha = (h == HyzmatType::INTERNET) ? internet.getBaha() : (h == HyzmatType::IPTV ? iptv.getBaha() : telefon.getBaha());
-    return "Abonent: " + ady + ", Hyzmat: " + hyzAdy + ", Onki balans: " + to_string(balans) + " TMT, Toleg: " + to_string(toleg) + " TMT, Baha: " + to_string(hyzBaha) + " TMT, Wagty: " + SmartContract::häzirkiWagtyAl();
+    double hyzBaha = 0.0;
+
+    if (h == HyzmatType::INTERNET) hyzBaha = internet.getBaha();
+    else if (h == HyzmatType::IPTV) hyzBaha = iptv.getBaha();
+    else if (h == HyzmatType::TELEFON) hyzBaha = telefon.getBaha();
+
+    double tazeBalans = hyzmatIşjeňmi(h) ? (balans + toleg) : (balans + toleg - hyzBaha);
+
+    return "Abonent: " + ady + 
+           ", Hyzmat: " + hyzAdy + 
+           ", Onki balans: " + to_string(balans) + " TMT" +
+           ", Toleg: " + to_string(toleg) + " TMT" +
+           ", Baha: " + to_string(hyzBaha) + " TMT" +
+           ", Taze balans: " + to_string(tazeBalans) + " TMT" +
+           ", Wagty: " + SmartContract::häzirkiWagtyAl();
 }
 
 bool SmartContract::hyzmatyIslet(Abonent &abonent, double toleg, HyzmatType hyzmat) {
@@ -172,53 +194,90 @@ bool SmartContract::getAbonentFromDB(string ady, Abonent &abonent) {
 }
 
 void SmartContract::fullSystemAudit(const Blockchain& bc) {
-    map<string, double> realBalances;
+    struct LatestState {
+        double balans = 0.0;
+        string internetWagt = "";
+        string telefonWagt = "";
+        string iptvWagt = "";
+        string hyzmatGornusi = "";
+    };
+    map<string, LatestState> bcStates;
 
     for (auto& block : bc.getAllBlocks()) {
         string data = block.sData;
+        try {
+            size_t namePos = data.find("Abonent: ");
+            size_t nameEnd = data.find(",", namePos);
+            if (namePos == string::npos) continue;
+            string ady = data.substr(namePos + 9, nameEnd - (namePos + 9));
 
-        size_t namePos = data.find("Abonent: ");
-        size_t commaPos = data.find(",", namePos);
-        
-        if (namePos != string::npos && commaPos != string::npos) {
-            string ady = data.substr(namePos + 9, commaPos - (namePos + 9));
+            size_t balPos = data.find("Taze balans: ");
+            size_t tmtPos = data.find(" TMT", balPos);
+            
+            size_t wagtPos = data.find("Wagty: ");
+            string wagt = data.substr(wagtPos + 7);
 
-            size_t payPos = data.find("Toleg: ");
-            size_t tmtPos1 = data.find(" TMT", payPos);
+            size_t hyzPos = data.find("Hyzmat: ");
+            size_t hyzEnd = data.find(",", hyzPos);
+            string hyzmat = data.substr(hyzPos + 8, hyzEnd - (hyzPos + 8));
 
-            size_t hyzBahPos = data.find("Baha: ");
-            size_t tmtPos2 = data.find(" TMT", hyzBahPos);
-
-            if (payPos != string::npos && tmtPos1 != string::npos && 
-                hyzBahPos != string::npos && tmtPos2 != string::npos) {
+            if (balPos != string::npos) {
+                bcStates[ady].balans = stod(data.substr(balPos + 13, tmtPos - (balPos + 13)));
+                bcStates[ady].hyzmatGornusi = hyzmat;
                 
-                try {
-                    string tolegStr = data.substr(payPos + 7, tmtPos1 - (payPos + 7));
-                    string hyzBahaStr = data.substr(hyzBahPos + 6, tmtPos2 - (hyzBahPos + 6));
-                    
-                    double tolegJemi = stod(tolegStr);
-                    double hyzmatBaha = stod(hyzBahaStr);
-                    
-                    realBalances[ady] += (tolegJemi - hyzmatBaha); 
-                    
-                } catch (...) {
-                    continue;
+                if (hyzmat.find("Internet") != string::npos) {
+                    bcStates[ady].internetWagt = wagt;
+                } else if (hyzmat.find("IP-TV") != string::npos) {
+                    bcStates[ady].iptvWagt = wagt;
+                } else if (hyzmat.find("Telefon") != string::npos) {
+                    bcStates[ady].telefonWagt = wagt;
                 }
             }
-        }
+        } catch (...) { continue; }
     }
 
     pqxx::connection* C = DatabaseManager::getConnection();
     pqxx::nontransaction N(*C);
-    pqxx::result R = N.exec("SELECT ady, balans FROM abonents");
+    pqxx::result R = N.exec("SELECT ady, balans, internet_wagt, iptv_wagt, telefon_wagt FROM abonents");
+
+    cout << "\n========== [ULGAMIŇ DOLY AUDITI] ==========" << endl;
+
     for (auto row : R) {
         string ady = row["ady"].as<string>();
         double dbBalans = row["balans"].as<double>();
-        
-        if (dbBalans != realBalances[ady]) {
-            cout << "[CRITICAL]: " << ady << " balansy galp! Bazada: " 
-                 << dbBalans << ", Blokçeýnde: " << realBalances[ady] << endl;
+        string dbIntWagt = row["internet_wagt"].as<string>();
+        string dbIptvWagt = row["iptv_wagt"].as<string>();
+        string dbTelWagt = row["telefon_wagt"].as<string>();
+
+        if (bcStates.find(ady) != bcStates.end()) {
+            bool errorFound = false;
+
+            if (abs(dbBalans - bcStates[ady].balans) > 0.01) {
+                cout << "[CRITICAL]: " << ady << " Balansy GALP! (DB: " << dbBalans << " / BC: " << bcStates[ady].balans << ")" << endl;
+                errorFound = true;
+            }
+
+            if (!bcStates[ady].internetWagt.empty() && dbIntWagt != bcStates[ady].internetWagt) {
+                cout << "[WARNING]: " << ady << " Internet möhleti gabat gelmeýär!" << endl;
+                errorFound = true;
+            }
+
+            if (!bcStates[ady].iptvWagt.empty() && dbIptvWagt != bcStates[ady].iptvWagt) {
+                cout << "[WARNING]: " << ady << " IP-TV möhleti gabat gelmeýär!" << endl;
+                errorFound = true;
+            }
+
+            if (!bcStates[ady].telefonWagt.empty() && dbTelWagt != bcStates[ady].telefonWagt) {
+                cout << "[WARNING]: " << ady << " Telefon möhleti gabat gelmeýär!" << endl;
+                errorFound = true;
+            }
+
+            if (!errorFound) {
+                cout << "[OK]: " << ady << " ähli maglumatlary dogry." << endl;
+            }
+        } else {
+            cout << "[INFO]: " << ady << " barada blokçeýnde heniz tranzaksiýa ýok." << endl;
         }
     }
-    cout << "[AUDIT COMPLETE]: Ähli abonentleriň balanslary barlandy." << endl;
+    cout << "===========================================\n" << endl;
 }

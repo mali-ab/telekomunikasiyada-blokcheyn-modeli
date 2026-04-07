@@ -54,7 +54,7 @@ int main() {
             cout << "5. Aktiw P2P düwünlerini görkez (List Peers)" << endl;
             cout << "6. Zynjyry gorkez" << endl;
             cout << "7. Zynjyry barlamak (Audit Chain)" << endl;
-            cout << "8. Ahli ulanyjylaryn balansyny barlamak (Full Audit)" << endl;
+            cout << "8. Ahli ulanyjylary barlamak (Full Audit)" << endl;
             cout << "9. Programmadan çykmak" << endl;
             cout << "Saýlawyňyz: ";
 
@@ -204,7 +204,7 @@ int main() {
                     cout << "[INFO]: RSA TASSYKLANDY." << endl;
                     
                     SmartContract::hyzmatyIslet(ulanyjy, girizilenToleg, hGornus);
-                    telekomBC.AddBlock(Block(1, transactionData));
+                    telekomBC.AddBlock(Block(telekomBC.getLatestBlock().getIndex() + 1, transactionData));
                     string p2pMsg = "NEW_BLOCK|" + transactionData + "|" + sigStr + "|" + to_string(keys.e) + "|" + to_string(keys.n);
                     myNode.broadcast_message(p2pMsg);
                     cout << "[SUCCESS]: Blok torda ýaýradyldy." << endl;

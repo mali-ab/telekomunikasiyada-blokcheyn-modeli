@@ -36,8 +36,6 @@ void Block::MineBlock(uint32_t nDifficulty) {
         iNonce++;
         sHash = CalculateHash();
     } while (sHash.substr(0, nDifficulty) != target);
-
-    cout << "[MINING]: Blok gazyldy: " << sHash << endl;
 }
 
 Blockchain::Blockchain() {
@@ -133,8 +131,10 @@ bool Blockchain::isChainValid(size_t i) {
 
     const Block &currentBlock = vChain[i];
     const Block &prevBlock = vChain[i - 1];
+    Block newBlock = currentBlock;
+    newBlock.MineBlock(nDifficulty);
 
-    if (currentBlock.sHash != currentBlock.CalculateHash()) {
+    if (currentBlock.sHash != newBlock.sHash) {
         cout << "[HACK ALERT]: Blok " << i << " maglumaty ýa-da heşi üýtgedilen!" << endl;
         return false;
     }
