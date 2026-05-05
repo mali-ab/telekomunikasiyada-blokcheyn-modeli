@@ -1,7 +1,10 @@
 #include "smartContract.h"
 #include "database.h"
 
-string SmartContract::häzirkiWagtyAl() {
+using namespace std;
+
+// --- Get current timestamp as string ---
+string SmartContract::getCurrentTimestamp() {
     time_t now = time(0);
     struct tm tstruct;
     char buf[80];
@@ -10,274 +13,294 @@ string SmartContract::häzirkiWagtyAl() {
     return buf;
 }
 
-time_t stringToTime(string wagt) {
-    if (wagt == "Işjeň däl") return 0;
+// --- Parse timestamp string to time_t ---
+static time_t stringToTime(const string &timeStr) {
+    if (timeStr == "Inactive") return 0;
     struct tm tm = {0};
-    std::istringstream ss(wagt);
-    ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+    istringstream ss(timeStr);
+    ss >> get_time(&tm, "%Y-%m-%d %H:%M:%S");
     return mktime(&tm);
 }
 
-bool InternetHyzmaty::setTizlik(const string &newTizlik) {
-    if (newTizlik == "1" || newTizlik == "2" || newTizlik == "4" || newTizlik == "6") {
-        tizlik = newTizlik;
+// --- Internet service: set speed ---
+bool InternetService::setSpeed(const string &newSpeed) {
+    if (newSpeed == "1" || newSpeed == "2" || newSpeed == "4" || newSpeed == "6") {
+        speed = newSpeed;
         return true;
     }
     return false;
 }
 
-bool IPTVHyzmaty::setTVsany(int newSany) {
-    if (newSany >= 0 && newSany <= 10) {
-        tvSany = newSany;
+// --- IPTV service: set TV count ---
+bool IPTVService::setTVCount(int newCount) {
+    if (newCount >= 0 && newCount <= 10) {
+        tvCount = newCount;
         return true;
     }
-    cout << "[ERROR]: TV sany 0-dan 10-ga çenli bolmaly!" << endl;
+    cout << "[ERROR]: TV count must be between 0 and 10!" << endl;
     return false;
 }
 
-Abonent::Abonent(string adyData) {
-    if (!SmartContract::getAbonentFromDB(adyData, *this)) {
-        ady = adyData;
-        balans = 0.0;
-        internetWagty = "Işjeň däl";
-        iptvWagty = "Işjeň däl";
-        telefonWagty = "Işjeň däl";
+// --- Subscriber constructor: load from DB or create new ---
+Subscriber::Subscriber(const string &subscriberName) {
+    if (!SmartContract::getSubscriberFromDB(subscriberName, *this)) {
+        name = subscriberName;
+        balance = 0.0;
+        internetExpiry = "Inactive";
+        iptvExpiry = "Inactive";
+        phoneExpiry = "Inactive";
     }
 }
 
-int Abonent::galanGun(const string &wagt) const {
-    if (wagt == "Işjeň däl") return 0;
-    
-    time_t acylanWagt = stringToTime(wagt);
-    time_t häzir = time(0);
-    
-    double diffSeconds = difftime(häzir, acylanWagt);
-    int gecenGunler = static_cast<int>(diffSeconds / (60 * 60 * 24));
-    
-    return (gecenGunler < 30) ? (30 - gecenGunler) : 0;
+// --- Calculate remaining days until service expires ---
+int Subscriber::remainingDays(const string &expiry) const {
+    if (expiry == "Inactive") return 0;
+
+    time_t activationTime = stringToTime(expiry);
+    time_t now = time(0);
+
+    double diffSeconds = difftime(now, activationTime);
+    int elapsedDays = static_cast<int>(diffSeconds / (60 * 60 * 24));
+
+    return (elapsedDays < 30) ? (30 - elapsedDays) : 0;
 }
 
-bool Abonent::hyzmatIşjeňmi(HyzmatType h) const {
-    switch (h) {
-        case HyzmatType::INTERNET: return galanGun(internetWagty) > 0;
-        case HyzmatType::IPTV: return galanGun(iptvWagty) > 0;
-        case HyzmatType::TELEFON: return galanGun(telefonWagty) > 0;
+// --- Check if a specific service is currently active ---
+bool Subscriber::isServiceActive(ServiceType type) const {
+    switch (type) {
+        case ServiceType::INTERNET: return remainingDays(internetExpiry) > 0;
+        case ServiceType::IPTV:     return remainingDays(iptvExpiry) > 0;
+        case ServiceType::PHONE:    return remainingDays(phoneExpiry) > 0;
         default: return false;
     }
 }
 
-string Abonent::getHyzmatynAdy(HyzmatType h) const {
-    switch (h) {
-        case HyzmatType::INTERNET: return "Internet " + internet.tizlik + " Mbit/s";
-        case HyzmatType::IPTV: return "IPTV " + to_string(iptv.tvSany) + " sany";
-        case HyzmatType::TELEFON: return "Telefon";
+// --- Get human-readable service name ---
+string Subscriber::getServiceName(ServiceType type) const {
+    switch (type) {
+        case ServiceType::INTERNET: return "Internet " + internet.speed + " Mbit/s";
+        case ServiceType::IPTV:     return "IPTV " + to_string(iptv.tvCount) + " channels";
+        case ServiceType::PHONE:    return "Phone";
         default: return "N/A";
     }
 }
 
-string Abonent::getTransactionData(HyzmatType h, double toleg) const {
-    string hyzAdy = getHyzmatynAdy(h);
-    double hyzBaha = 0.0;
+// --- Build transaction data string for blockchain ---
+string Subscriber::getTransactionData(ServiceType type, double payment) const {
+    string serviceName = getServiceName(type);
+    double servicePrice = 0.0;
 
-    if (h == HyzmatType::INTERNET) hyzBaha = internet.getBaha();
-    else if (h == HyzmatType::IPTV) hyzBaha = iptv.getBaha();
-    else if (h == HyzmatType::TELEFON) hyzBaha = telefon.getBaha();
+    switch (type) {
+        case ServiceType::INTERNET: servicePrice = internet.getPrice(); break;
+        case ServiceType::IPTV:     servicePrice = iptv.getPrice(); break;
+        case ServiceType::PHONE:    servicePrice = phone.getPrice(); break;
+    }
 
-    double tazeBalans = hyzmatIşjeňmi(h) ? (balans + toleg) : (balans + toleg - hyzBaha);
+    double newBalance = isServiceActive(type)
+        ? (balance + payment)
+        : (balance + payment - servicePrice);
 
-    return "Abonent: " + ady + 
-           ", Hyzmat: " + hyzAdy + 
-           ", Onki balans: " + to_string(balans) + " TMT" +
-           ", Toleg: " + to_string(toleg) + " TMT" +
-           ", Baha: " + to_string(hyzBaha) + " TMT" +
-           ", Taze balans: " + to_string(tazeBalans) + " TMT" +
-           ", Wagty: " + SmartContract::häzirkiWagtyAl();
+    return "Subscriber: " + name +
+           ", Service: " + serviceName +
+           ", Previous balance: " + to_string(balance) + " TMT" +
+           ", Payment: " + to_string(payment) + " TMT" +
+           ", Price: " + to_string(servicePrice) + " TMT" +
+           ", New balance: " + to_string(newBalance) + " TMT" +
+           ", Timestamp: " + SmartContract::getCurrentTimestamp();
 }
 
-bool SmartContract::hyzmatyIslet(Abonent &abonent, double toleg, HyzmatType hyzmat) {
-    double baha = 0;
-    string hyzmatAdy = "";
-    string *currentWagt = nullptr;
+// --- Process a service payment via smart contract ---
+bool SmartContract::processService(Subscriber &subscriber, double payment, ServiceType service) {
+    double price = 0;
+    string serviceName;
+    string *currentExpiry = nullptr;
 
-    switch (hyzmat) {
-        case HyzmatType::INTERNET:
-            currentWagt = &abonent.internetWagty; 
-            baha = abonent.internet.getBaha();
-            hyzmatAdy = "Internet (" + abonent.internet.tizlik + " Mbit/s)";
+    switch (service) {
+        case ServiceType::INTERNET:
+            currentExpiry = &subscriber.internetExpiry;
+            price = subscriber.internet.getPrice();
+            serviceName = "Internet (" + subscriber.internet.speed + " Mbit/s)";
             break;
-        case HyzmatType::IPTV:     
-            currentWagt = &abonent.iptvWagty; 
-            baha = abonent.iptv.getBaha();
-            hyzmatAdy = "IP-TV (" + to_string(abonent.iptv.tvSany) + " sany)";
+        case ServiceType::IPTV:
+            currentExpiry = &subscriber.iptvExpiry;
+            price = subscriber.iptv.getPrice();
+            serviceName = "IP-TV (" + to_string(subscriber.iptv.tvCount) + " channels)";
             break;
-        case HyzmatType::TELEFON:  
-            currentWagt = &abonent.telefonWagty; 
-            baha = abonent.telefon.getBaha();
-            hyzmatAdy = "Telefon";  
+        case ServiceType::PHONE:
+            currentExpiry = &subscriber.phoneExpiry;
+            price = subscriber.phone.getPrice();
+            serviceName = "Phone";
             break;
     }
 
-    cout << "\n[AKYLLY SERTNAMA]: " << hyzmatAdy << " barlanýar..." << endl;
+    cout << "\n[SMART CONTRACT]: Validating " << serviceName << "..." << endl;
 
-    if (abonent.galanGun(*currentWagt) > 0) {
-        abonent.balans += toleg;
-        updateAbonentInDB(abonent);
-        cout << "[INFO]: Hyzmat eýýäm işjeň. Töleg balansa goşuldy." << endl;
+    // If service is already active, just add payment to balance
+    if (subscriber.remainingDays(*currentExpiry) > 0) {
+        subscriber.balance += payment;
+        updateSubscriberInDB(subscriber);
+        cout << "[INFO]: Service already active. Payment added to balance." << endl;
         return false;
     }
 
-    double jemi = abonent.balans + toleg;
-    if (jemi >= baha) {
-        abonent.balans = jemi - baha;
-        *currentWagt = häzirkiWagtyAl();
-        
-        cout << "[SUCCESS]: " << hyzmatAdy << " aktiwleşdirildi!" << endl;
-        updateAbonentInDB(abonent);
+    // Check if total funds are sufficient
+    double total = subscriber.balance + payment;
+    if (total >= price) {
+        subscriber.balance = total - price;
+        *currentExpiry = getCurrentTimestamp();
+
+        cout << "[SUCCESS]: " << serviceName << " activated!" << endl;
+        updateSubscriberInDB(subscriber);
         return true;
     } else {
-        cout << "[ERROR]: Balans ýetersiz. Gerekli: " << baha << " TMT" << endl;
+        cout << "[ERROR]: Insufficient balance. Required: " << price << " TMT" << endl;
         return false;
     }
 }
 
-void SmartContract::updateAbonentInDB(const Abonent &abonent) {
+// --- Insert or update subscriber record in database ---
+void SmartContract::updateSubscriberInDB(const Subscriber &subscriber) {
     try {
         pqxx::connection* C = DatabaseManager::getConnection();
         pqxx::work W(*C);
-        
-        string sql = "INSERT INTO abonents (ady, balans, internet_wagt, internet_tizlik, iptv_wagt, iptv_sany, telefon_wagt) VALUES (" +
-                        W.quote(abonent.ady) + ", " + 
-                        to_string(abonent.balans) + ", " +
-                        W.quote(abonent.internetWagty) + ", " +
-                        W.quote(abonent.internet.tizlik) + ", " +
-                        W.quote(abonent.iptvWagty) + ", " +
-                        to_string(abonent.iptv.tvSany) + ", " +
-                        W.quote(abonent.telefonWagty) + ") " +
-                        "ON CONFLICT (ady) DO UPDATE SET " +
-                        "balans = EXCLUDED.balans, " +
-                        "internet_wagt = EXCLUDED.internet_wagt, " +
-                        "internet_tizlik = EXCLUDED.internet_tizlik, " +
-                        "iptv_wagt = EXCLUDED.iptv_wagt, " +
-                        "iptv_sany = EXCLUDED.iptv_sany, " +
-                        "telefon_wagt = EXCLUDED.telefon_wagt;";
-        
+
+        string sql = "INSERT INTO subscribers (name, balance, internet_expiry, internet_speed, iptv_expiry, iptv_count, phone_expiry) VALUES (" +
+                        W.quote(subscriber.name) + ", " +
+                        to_string(subscriber.balance) + ", " +
+                        W.quote(subscriber.internetExpiry) + ", " +
+                        W.quote(subscriber.internet.speed) + ", " +
+                        W.quote(subscriber.iptvExpiry) + ", " +
+                        to_string(subscriber.iptv.tvCount) + ", " +
+                        W.quote(subscriber.phoneExpiry) + ") " +
+                        "ON CONFLICT (name) DO UPDATE SET " +
+                        "balance = EXCLUDED.balance, " +
+                        "internet_expiry = EXCLUDED.internet_expiry, " +
+                        "internet_speed = EXCLUDED.internet_speed, " +
+                        "iptv_expiry = EXCLUDED.iptv_expiry, " +
+                        "iptv_count = EXCLUDED.iptv_count, " +
+                        "phone_expiry = EXCLUDED.phone_expiry;";
+
         W.exec(sql);
         W.commit();
-        cout << "[DB]: '" << abonent.ady << "' maglumatlary täzelendi." << endl;
+        cout << "[DB]: '" << subscriber.name << "' record updated." << endl;
     } catch (const std::exception &e) {
         cerr << "[DB UPDATE ERROR]: " << e.what() << endl;
     }
 }
 
-bool SmartContract::getAbonentFromDB(string ady, Abonent &abonent) {
+// --- Fetch subscriber record from database ---
+bool SmartContract::getSubscriberFromDB(const string &name, Subscriber &subscriber) {
     try {
         pqxx::connection* C = DatabaseManager::getConnection();
         pqxx::nontransaction N(*C);
-        
-        string sql = "SELECT balans, internet_wagt, internet_tizlik, iptv_wagt, iptv_sany, telefon_wagt FROM abonents WHERE ady = " + N.quote(ady) + ";";
+
+        string sql = "SELECT balance, internet_expiry, internet_speed, iptv_expiry, iptv_count, phone_expiry FROM subscribers WHERE name = " + N.quote(name) + ";";
         pqxx::result R = N.exec(sql);
 
         if (!R.empty()) {
-            abonent.ady = ady;
-            abonent.balans = R[0]["balans"].as<double>();
-            abonent.internetWagty = R[0]["internet_wagt"].as<string>();
-            abonent.internet.tizlik = R[0]["internet_tizlik"].as<string>();
-            abonent.iptvWagty = R[0]["iptv_wagt"].as<string>();
-            abonent.iptv.tvSany = R[0]["iptv_sany"].as<int>();
-            abonent.telefonWagty = R[0]["telefon_wagt"].as<string>();
-            return true; 
+            subscriber.name = name;
+            subscriber.balance = R[0]["balance"].as<double>();
+            subscriber.internetExpiry = R[0]["internet_expiry"].as<string>();
+            subscriber.internet.speed = R[0]["internet_speed"].as<string>();
+            subscriber.iptvExpiry = R[0]["iptv_expiry"].as<string>();
+            subscriber.iptv.tvCount = R[0]["iptv_count"].as<int>();
+            subscriber.phoneExpiry = R[0]["phone_expiry"].as<string>();
+            return true;
         }
     } catch (const std::exception &e) {
         cerr << "[DB READ ERROR]: " << e.what() << endl;
     }
-    return false; 
+    return false;
 }
 
+// --- Full system audit: compare blockchain state vs database ---
 void SmartContract::fullSystemAudit(const Blockchain& bc) {
     struct LatestState {
-        double balans = 0.0;
-        string internetWagt = "";
-        string telefonWagt = "";
-        string iptvWagt = "";
-        string hyzmatGornusi = "";
+        double balance = 0.0;
+        string internetExpiry;
+        string phoneExpiry;
+        string iptvExpiry;
+        string serviceName;
     };
     map<string, LatestState> bcStates;
 
-    for (auto& block : bc.getAllBlocks()) {
-        string data = block.sData;
+    // Replay blockchain to reconstruct latest state per subscriber
+    for (const auto &block : bc.getAllBlocks()) {
+        const string &data = block.sData;
         try {
-            size_t namePos = data.find("Abonent: ");
+            size_t namePos = data.find("Subscriber: ");
             size_t nameEnd = data.find(",", namePos);
             if (namePos == string::npos) continue;
-            string ady = data.substr(namePos + 9, nameEnd - (namePos + 9));
+            string subscriberName = data.substr(namePos + 12, nameEnd - (namePos + 12));
 
-            size_t balPos = data.find("Taze balans: ");
+            size_t balPos = data.find("New balance: ");
             size_t tmtPos = data.find(" TMT", balPos);
-            
-            size_t wagtPos = data.find("Wagty: ");
-            string wagt = data.substr(wagtPos + 7);
 
-            size_t hyzPos = data.find("Hyzmat: ");
-            size_t hyzEnd = data.find(",", hyzPos);
-            string hyzmat = data.substr(hyzPos + 8, hyzEnd - (hyzPos + 8));
+            size_t timePos = data.find("Timestamp: ");
+            string timestamp = data.substr(timePos + 11);
+
+            size_t svcPos = data.find("Service: ");
+            size_t svcEnd = data.find(",", svcPos);
+            string service = data.substr(svcPos + 9, svcEnd - (svcPos + 9));
 
             if (balPos != string::npos) {
-                bcStates[ady].balans = stod(data.substr(balPos + 13, tmtPos - (balPos + 13)));
-                bcStates[ady].hyzmatGornusi = hyzmat;
-                
-                if (hyzmat.find("Internet") != string::npos) {
-                    bcStates[ady].internetWagt = wagt;
-                } else if (hyzmat.find("IP-TV") != string::npos) {
-                    bcStates[ady].iptvWagt = wagt;
-                } else if (hyzmat.find("Telefon") != string::npos) {
-                    bcStates[ady].telefonWagt = wagt;
+                bcStates[subscriberName].balance = stod(data.substr(balPos + 13, tmtPos - (balPos + 13)));
+                bcStates[subscriberName].serviceName = service;
+
+                if (service.find("Internet") != string::npos) {
+                    bcStates[subscriberName].internetExpiry = timestamp;
+                } else if (service.find("IP-TV") != string::npos) {
+                    bcStates[subscriberName].iptvExpiry = timestamp;
+                } else if (service.find("Phone") != string::npos) {
+                    bcStates[subscriberName].phoneExpiry = timestamp;
                 }
             }
         } catch (...) { continue; }
     }
 
+    // Compare with database
     pqxx::connection* C = DatabaseManager::getConnection();
     pqxx::nontransaction N(*C);
-    pqxx::result R = N.exec("SELECT ady, balans, internet_wagt, iptv_wagt, telefon_wagt FROM abonents");
+    pqxx::result R = N.exec("SELECT name, balance, internet_expiry, iptv_expiry, phone_expiry FROM subscribers");
 
-    cout << "\n========== [ULGAMIŇ DOLY AUDITI] ==========" << endl;
+    cout << "\n========== [FULL SYSTEM AUDIT] ==========" << endl;
 
-    for (auto row : R) {
-        string ady = row["ady"].as<string>();
-        double dbBalans = row["balans"].as<double>();
-        string dbIntWagt = row["internet_wagt"].as<string>();
-        string dbIptvWagt = row["iptv_wagt"].as<string>();
-        string dbTelWagt = row["telefon_wagt"].as<string>();
+    for (const auto &row : R) {
+        string subscriberName = row["name"].as<string>();
+        double dbBalance = row["balance"].as<double>();
+        string dbIntExpiry = row["internet_expiry"].as<string>();
+        string dbIptvExpiry = row["iptv_expiry"].as<string>();
+        string dbPhoneExpiry = row["phone_expiry"].as<string>();
 
-        if (bcStates.find(ady) != bcStates.end()) {
+        if (bcStates.find(subscriberName) != bcStates.end()) {
             bool errorFound = false;
 
-            if (abs(dbBalans - bcStates[ady].balans) > 0.01) {
-                cout << "[CRITICAL]: " << ady << " Balansy GALP! (DB: " << dbBalans << " / BC: " << bcStates[ady].balans << ")" << endl;
+            if (abs(dbBalance - bcStates[subscriberName].balance) > 0.01) {
+                cout << "[CRITICAL]: " << subscriberName << " Balance TAMPERED! (DB: " << dbBalance << " / BC: " << bcStates[subscriberName].balance << ")" << endl;
                 errorFound = true;
             }
 
-            if (!bcStates[ady].internetWagt.empty() && dbIntWagt != bcStates[ady].internetWagt) {
-                cout << "[WARNING]: " << ady << " Internet möhleti gabat gelmeýär!" << endl;
+            if (!bcStates[subscriberName].internetExpiry.empty() && dbIntExpiry != bcStates[subscriberName].internetExpiry) {
+                cout << "[WARNING]: " << subscriberName << " Internet expiry mismatch!" << endl;
                 errorFound = true;
             }
 
-            if (!bcStates[ady].iptvWagt.empty() && dbIptvWagt != bcStates[ady].iptvWagt) {
-                cout << "[WARNING]: " << ady << " IP-TV möhleti gabat gelmeýär!" << endl;
+            if (!bcStates[subscriberName].iptvExpiry.empty() && dbIptvExpiry != bcStates[subscriberName].iptvExpiry) {
+                cout << "[WARNING]: " << subscriberName << " IP-TV expiry mismatch!" << endl;
                 errorFound = true;
             }
 
-            if (!bcStates[ady].telefonWagt.empty() && dbTelWagt != bcStates[ady].telefonWagt) {
-                cout << "[WARNING]: " << ady << " Telefon möhleti gabat gelmeýär!" << endl;
+            if (!bcStates[subscriberName].phoneExpiry.empty() && dbPhoneExpiry != bcStates[subscriberName].phoneExpiry) {
+                cout << "[WARNING]: " << subscriberName << " Phone expiry mismatch!" << endl;
                 errorFound = true;
             }
 
             if (!errorFound) {
-                cout << "[OK]: " << ady << " ähli maglumatlary dogry." << endl;
+                cout << "[OK]: " << subscriberName << " all records verified." << endl;
             }
         } else {
-            cout << "[INFO]: " << ady << " barada blokçeýnde heniz tranzaksiýa ýok." << endl;
+            cout << "[INFO]: " << subscriberName << " has no transactions on the blockchain yet." << endl;
         }
     }
-    cout << "===========================================\n" << endl;
+    cout << "==========================================\n" << endl;
 }

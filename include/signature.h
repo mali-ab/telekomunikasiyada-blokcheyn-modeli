@@ -7,28 +7,26 @@
 #include <cmath>
 #include <fstream>
 
-using namespace std;
-
 struct RSAKeys {
-    long long n; // modul
-    long long e; // Public
-    long long d; // Private
+    long long n; // modulus
+    long long e; // public exponent
+    long long d; // private exponent
 };
 
 class DigitalSignature {
 public:
     static long long gcd(long long a, long long b);
     static long long power(long long base, long long exp, long long mod);
-    static vector<long long> getPrimesList(long long max_n);
-    static long long selectRandomPrime(const vector<long long>& primes);
-    
+    static std::vector<long long> getPrimesList(long long max_n);
+    static long long selectRandomPrime(const std::vector<long long> &primes);
+
     static RSAKeys generateKeys();
-    static vector<long long> encrypt(string data, long long d, long long n);
-    static string decrypt(vector<long long> cipher, long long e, long long n);
-    
-    static void saveKeys(const RSAKeys& keys, const string& filename);
-    static bool loadKeys(RSAKeys& keys, const string& filename);
-    static RSAKeys getKeys(const string& filename = "keys.txt");
+    static std::vector<long long> encrypt(const std::string &data, long long d, long long n);
+    static std::string decrypt(const std::vector<long long> &cipher, long long e, long long n);
+
+    static void saveKeys(const RSAKeys &keys, const std::string &filename);
+    static bool loadKeys(RSAKeys &keys, const std::string &filename);
+    static RSAKeys getKeys(const std::string &filename = "keys.txt");
 };
 
 #endif

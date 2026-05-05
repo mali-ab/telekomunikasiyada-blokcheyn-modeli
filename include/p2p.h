@@ -16,17 +16,17 @@ class P2PNode {
 public:
     P2PNode(int port, Blockchain &bc);
     void start_node();
-    void connect_to_peer(std::string host, std::string port);
-    void broadcast_message(std::string message);
+    void connect_to_peer(const std::string &host, const std::string &port);
+    void broadcast_message(const std::string &message);
     void list_active_peers();
 
 private:
     void do_accept();
     void do_read(std::shared_ptr<tcp::socket> socket);
-    void handle_incoming_block(std::string message);
-    
+    void handle_incoming_block(const std::string &message);
+
     int port_;
-    Blockchain &telekomBC;
+    Blockchain &blockchain_;
     boost::asio::io_context io_context_;
     tcp::acceptor acceptor_;
     std::vector<std::shared_ptr<tcp::socket>> peers_;

@@ -11,79 +11,84 @@
 
 namespace pqxx { class connection; }
 
-using namespace std;
+// --- Service type enumeration ---
+enum class ServiceType { INTERNET = 1, IPTV = 2, PHONE = 3 };
 
-enum class HyzmatType { INTERNET = 1, IPTV = 2, TELEFON = 3 };
-
-class HyzmatBase {
+// --- Abstract base class for all services ---
+class ServiceBase {
 public:
-    virtual double getBaha() const = 0;
-    virtual string getStatus() const = 0;
-    virtual ~HyzmatBase() {}
+    virtual double getPrice() const = 0;
+    virtual std::string getStatus() const = 0;
+    virtual ~ServiceBase() {}
 };
 
-class InternetHyzmaty : public HyzmatBase {
+// --- Internet service ---
+class InternetService : public ServiceBase {
 public:
-    string tizlik;
-    InternetHyzmaty(string t = "1") : tizlik(t) {}
+    std::string speed;
+    InternetService(std::string s = "1") : speed(std::move(s)) {}
 
-    bool setTizlik(const string &newTizlik);
-    
-    double getBaha() const override {
-        if (tizlik == "1") return 150.0;
-        if (tizlik == "2") return 180.0;
-        if (tizlik == "4") return 230.0;
-        if (tizlik == "6") return 280.0;
+    bool setSpeed(const std::string &newSpeed);
+
+    double getPrice() const override {
+        if (speed == "1") return 150.0;
+        if (speed == "2") return 180.0;
+        if (speed == "4") return 230.0;
+        if (speed == "6") return 280.0;
         return 0.0;
     }
-    string getStatus() const override { return tizlik + " Mbit/s"; }
+    std::string getStatus() const override { return speed + " Mbit/s"; }
 };
 
-class IPTVHyzmaty : public HyzmatBase {
+// --- IPTV service ---
+class IPTVService : public ServiceBase {
 public:
-    int tvSany;
-    IPTVHyzmaty(int s = 1) : tvSany(s) {}
-    
-    bool setTVsany(int newTVsany);
-    
-    double getBaha() const override { return tvSany ? 10 + tvSany - 1 : 0; }
-    string getStatus() const override { return to_string(tvSany) + " TV"; }
+    int tvCount;
+    IPTVService(int count = 1) : tvCount(count) {}
+
+    bool setTVCount(int newCount);
+
+    double getPrice() const override { return tvCount ? 10 + tvCount - 1 : 0; }
+    std::string getStatus() const override { return std::to_string(tvCount) + " TV"; }
 };
 
-class TelefonHyzmaty : public HyzmatBase {
+// --- Phone service ---
+class PhoneService : public ServiceBase {
 public:
-    double getBaha() const override { return 10.0; }
-    string getStatus() const override { return "Aktiw"; }
+    double getPrice() const override { return 10.0; }
+    std::string getStatus() const override { return "Active"; }
 };
 
-struct Abonent {
-    string ady;
-    double balans;
-    
-    InternetHyzmaty internet;
-    IPTVHyzmaty iptv;
-    TelefonHyzmaty telefon;
+// --- Subscriber data structure ---
+struct Subscriber {
+    std::string name;
+    double balance;
 
-    string internetWagty;
-    string iptvWagty;
-    string telefonWagty;
+    InternetService internet;
+    IPTVService iptv;
+    PhoneService phone;
 
-    Abonent(string adyData);
+    std::string internetExpiry;
+    std::string iptvExpiry;
+    std::string phoneExpiry;
 
-    int galanGun(const string& wagt) const;
-    bool hyzmatIşjeňmi(HyzmatType h) const;
-    string getHyzmatynAdy(HyzmatType h) const;
-    string getTransactionData(HyzmatType h, double toleg) const;
+    Subscriber(const std::string &subscriberName);
+
+    int remainingDays(const std::string &expiry) const;
+    bool isServiceActive(ServiceType type) const;
+    std::string getServiceName(ServiceType type) const;
+    std::string getTransactionData(ServiceType type, double payment) const;
 };
 
+// --- Smart contract logic ---
 class SmartContract {
 public:
-    static bool hyzmatyIslet(Abonent &abonent, double toleg, HyzmatType hyzmat);
+    static bool processService(Subscriber &subscriber, double payment, ServiceType service);
 
-    static void updateAbonentInDB(const Abonent &abonent);
-    static bool getAbonentFromDB(const string ady, Abonent &abonent);
+    static void updateSubscriberInDB(const Subscriber &subscriber);
+    static bool getSubscriberFromDB(const std::string &name, Subscriber &subscriber);
     static void fullSystemAudit(const Blockchain &bc);
-    static string häzirkiWagtyAl();
+    static std::string getCurrentTimestamp();
 };
 
 #endif

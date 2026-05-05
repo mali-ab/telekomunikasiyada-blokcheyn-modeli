@@ -8,46 +8,43 @@
 #include <sstream>
 #include <iomanip>
 #include <openssl/evp.h>
-#include <pqxx/pqxx>
 
-using namespace std;
-
-string sha256(const string str);
+std::string sha256(const std::string &str);
 
 class Block {
 public:
     int nIndex;
-    string sData;
-    string sPrevHash;
-    string sHash;
+    std::string sData;
+    std::string sPrevHash;
+    std::string sHash;
     int iNonce;
     time_t tTime;
 
-    Block(int nIndexIn, const string &sDataIn);
+    Block(int indexIn, const std::string &dataIn);
 
-    string CalculateHash() const;
-    void MineBlock(uint32_t nDifficulty);
+    std::string CalculateHash() const;
+    void MineBlock(uint32_t difficulty);
     int getIndex() const { return nIndex; }
 };
 
 class Blockchain {
 public:
     Blockchain();
-    
-    void AddBlock(Block bNew);
-    
-    void saveBlockToPostgres(const Block &bNew);
+
+    void AddBlock(Block newBlock);
+
+    void saveBlockToDB(const Block &block);
     Block getLatestBlock() const;
     void listAllBlocks() const;
-    vector<Block> getAllBlocks() const;
-    bool isChainValid(size_t i);
+    std::vector<Block> getAllBlocks() const;
+    bool isChainValid(size_t index);
     bool fullAudit();
 
 private:
     uint32_t nDifficulty = 3;
-    vector<Block> vChain;
+    std::vector<Block> vChain;
 
-    void loadChainFromPostgres();
+    void loadChainFromDB();
 };
 
 #endif
