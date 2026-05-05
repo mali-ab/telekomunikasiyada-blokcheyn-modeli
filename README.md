@@ -1,89 +1,89 @@
-# 🌐 Telekomunikasiýada Blokçeýn Modeli (Turkmentelekom)
+# 🌐 Blockchain Model for Telecommunications (Turkmentelekom)
 
-Bu taslama **"Türkmentelekom" elektrik aragatnaşyk kompaniýasynyň** mysalynda, hyzmatlary dolandyrmak, tölegleri awtomatlaşdyrmak we maglumat howpsuzlygyny üpjün etmek üçin işlenip düzülen **Paýlanan Reýestr Tehnologiýasy (DLT)** modelidir.
+This project is a **Distributed Ledger Technology (DLT)** model developed using the example of **"Turkmentelekom" telecommunications company**, designed for managing services, automating payments, and ensuring data security.
 
-## 📌 Taslamanyň Maksady
+## 📌 Project Objective
 
-Merkezleşdirilen ulgamlardaky "ýeke-täk şowsuzlyk nokady" (Single Point of Failure) meselesini aradan aýyrmak, abonent maglumatlarynyň manipulýasiýasyny bökdemek we **RSA + SHA-256** algoritmleri arkaly tranzaksiýalaryň ynamlylygyny üpjün etmek.
-
----
-
-## 🛠 Tehniki Binýat we Arhitektura
-
-Taslama döwrebap C++ standartlarynda (C++17) we modully binýatda guraldy:
-
-* **Backend:** C++ (Ýokary tizlik we resurs dolandyryşy).
-* **Database:** PostgreSQL (Abonent maglumatlarynyň hemişelik saklanmagy).
-* **Networking:** Boost.Asio (P2P düwünleriniň arasynda asinhron habarlaşyk).
-* **Cryptography:** OpenSSL (SHA-256 we RSA kriptografik gorag).
-
-### Esasy Gatlaklar (Layers)
-1.  **Maglumat Gatlagy (Blockchain):** Bloklaryň zynjyryny we PoW (Proof of Work) mining prosesini dolandyrýar.
-2.  **Howpsuzlyk Gatlagy (Digital Signature):** RSA algoritmi arkaly tranzaksiýalaryň hakykylygyny tassyklaýar.
-3.  **Amallar Gatlagy (Smart Contract):** Internet, IP-TV we Telefon hyzmatlarynyň töleg şertlerini awtomatiki barlaýar.
-4.  **Tor Gatlagy (P2P Node):** Täze bloklary tordaky beýleki düwünlere (peers) hakyky wagtda ýaýradýar.
+Eliminate the "Single Point of Failure" problem inherent in centralized systems, prevent manipulation of subscriber data, and ensure transaction integrity through **RSA + SHA-256** algorithms.
 
 ---
 
-## 📂 Taslamanyň Gurluşy (Project Tree)
+## 🛠 Technical Foundation and Architecture
+
+The project is built using modern C++ standards (C++17) with a modular architecture:
+
+* **Backend:** C++ (High performance and resource management).
+* **Database:** PostgreSQL (Persistent storage of subscriber data).
+* **Networking:** Boost.Asio (Asynchronous P2P node communication).
+* **Cryptography:** OpenSSL (SHA-256 and RSA cryptographic protection).
+
+### Core Layers
+1. **Data Layer (Blockchain):** Manages the chain of blocks and the PoW (Proof of Work) mining process.
+2. **Security Layer (Digital Signature):** Verifies transaction authenticity using the RSA algorithm.
+3. **Business Logic Layer (Smart Contract):** Automatically validates payment conditions for Internet, IP-TV, and Phone services.
+4. **Network Layer (P2P Node):** Broadcasts new blocks to other peers on the network in real time.
+
+---
+
+## 📂 Project Structure
 
 ```text
 Turkmentelekom_Blockchain/
-├── include/              # Header faýllary (.h)
-│   ├── blockchain.h      # Blokçeýn gurluşy
+├── include/              # Header files (.h)
+│   ├── blockchain.h      # Blockchain data structures
 │   ├── database.h        # PostgreSQL Singleton Manager
-│   ├── p2p.h             # Boost.Asio P2P Düwüni
-│   ├── signature.h       # RSA Kriptografiýa
-│   └── smartContract.h   # Akylly şertnama logikasy
-├── src/                  # Amala aşyryş faýllary (.cpp)
+│   ├── p2p.h             # Boost.Asio P2P Node
+│   ├── signature.h       # RSA Cryptography
+│   └── smartContract.h   # Smart contract logic
+├── src/                  # Implementation files (.cpp)
 │   ├── blockchain.cpp
 │   ├── database.cpp
 │   ├── p2p.cpp
 │   ├── signature.cpp
 │   └── smartContract.cpp
-├── .env                  # DB sazlamalary (DB_NAME, DB_PASS we s.m.)
-├── main.cpp              # Programmanyň girişi we interaktiw menýu
-├── Makefile              # Awtomatiki build ulgamy
-└── README.md             # Dokumentasiýa
+├── .env                  # DB settings (DB_NAME, DB_PASS, etc.)
+├── main.cpp              # Program entry point and interactive menu
+├── Makefile              # Automated build system
+└── README.md             # Documentation
 ```
 
 ---
 
-## 🚀 Gurnama we Işletmek
+## 🚀 Installation and Running
 
-### 1. Gerekli kitaphanalar (Dependencies)
-Linux (Ubuntu/Debian) ulgamynda aşakdaky buýrugy işlediň:
+### 1. Required Libraries (Dependencies)
+On a Linux (Ubuntu/Debian) system, run:
 ```bash
 sudo apt-get update
 sudo apt-get install libssl-dev libpqxx-dev postgresql libboost-all-dev
 ```
 
-### 2. Maglumat bazasyny sazlamak
-PostgreSQL-de `telekom_db` bazasyny dörediň we `.env` faýlynda öz paroluňyzy giriziň.
+### 2. Database Setup
+Create the `telekom_db` database in PostgreSQL and enter your password in the `.env` file.
 
-### 3. Kompilýasiýa we Işletmek
+### 3. Compilation and Execution
 ```bash
-# Programmany arassalamak we gurmak
+# Clean and build
 make clean && make
 
-# Programmany işletmek
+# Run the program
 ./telekom_system
 ```
 
 ---
 
-## 📊 Tehniki Netijelilik we Howpsuzlyk
+## 📊 Technical Efficiency and Security
 
-### Ulgamyň Durnuklylygy
-Ulgamyň haker hüjümlerine durnuklylygy düwünleriň sany ($n$) we mining kynlygy ($d$) bilen baglylykda ähtimallyklar nazaryýeti arkaly hasaplanýar:
+### System Resilience
+The system's resilience against hacking attacks is calculated using probability theory, based on the number of nodes ($n$) and mining difficulty ($d$):
 
 $$P = \sum_{k=\lceil n/2 \rceil}^{n} \binom{n}{k} p^k (1-p)^{n-k}$$
 
-*Bellik: Paýlanan ulgamda maglumaty üýtgetmek üçin tordaky düwünleriň 51%-inden gowragyny ele geçirmek gerek, bu bolsa amaly taýdan imkansyzdyr.*
+*Note: To alter data in the distributed system, an attacker would need to control more than 51% of the network nodes, which is practically infeasible.*
 
 ---
 
-## 👨‍💻 Operatoryň Ulanyş Gollanmasy
-1. **Port Saýlawy:** Programma açylanda lokal porty (mysal üçin: 8080) giriziň.
-2. **P2P Birikme:** Tordaky beýleki operatora birikmek üçin onuň IP-sini we portuny giriziň.
-3. **Hyzmat Aktiwleşdirmek:** Abonent adyny we töleg mukdaryny giriziň. Akylly şertnama tölegi tassyklasa, täze blok dörediler we torda ýaýradylar.
+## 👨‍💻 Operator User Guide
+1. **Port Selection:** Enter a local port (e.g., 8080) when the program starts.
+2. **P2P Connection:** To connect to another operator on the network, enter their IP address and port.
+3. **Service Activation:** Enter the subscriber name and payment amount. If the smart contract approves the payment, a new block is created and broadcast across the network.

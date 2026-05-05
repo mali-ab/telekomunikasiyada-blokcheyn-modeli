@@ -18,7 +18,7 @@ std::map<std::string, std::string> DatabaseManager::loadEnv() {
 pqxx::connection* DatabaseManager::getConnection() {
     if (conn == nullptr) {
         auto env = loadEnv();
-        std::string conn_str = "dbname=" + env["DB_NAME"] + " user=" + env["DB_USER"] + 
+        std::string conn_str = "dbname=" + env["DB_NAME"] + " user=" + env["DB_USER"] +
                                " password=" + env["DB_PASS"] + " host=" + env["DB_HOST"];
         conn = new pqxx::connection(conn_str);
     }
@@ -37,17 +37,17 @@ void DatabaseManager::initTables() {
                 "block_data TEXT, "
                 "timestamp BIGINT);");
 
-        W.exec("CREATE TABLE IF NOT EXISTS abonents ("
-                "ady TEXT PRIMARY KEY, "
-                "balans NUMERIC(10, 2), "
-                "internet_wagt TEXT, "
-                "internet_tizlik TEXT, "
-                "iptv_wagt TEXT, "
-                "iptv_sany TEXT, "
-                "telefon_wagt TEXT);");
+        W.exec("CREATE TABLE IF NOT EXISTS subscribers ("
+                "name TEXT PRIMARY KEY, "
+                "balance NUMERIC(10, 2), "
+                "internet_expiry TEXT, "
+                "internet_speed TEXT, "
+                "iptv_expiry TEXT, "
+                "iptv_count TEXT, "
+                "phone_expiry TEXT);");
 
         W.commit();
-        std::cout << "[DATABASE]: Ähli jedweller taýýar." << std::endl;
+        std::cout << "[DATABASE]: All tables ready." << std::endl;
     } catch (const std::exception &e) {
         std::cerr << "[INIT ERROR]: " << e.what() << std::endl;
     }
