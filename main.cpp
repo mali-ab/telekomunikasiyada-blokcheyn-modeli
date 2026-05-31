@@ -21,7 +21,7 @@ int main() {
 
         // --- P2P PORT AND CONNECTION SETUP ---
         int localPort;
-        cout << ">>> Bu düwün üçin ýerli porty giriziň (mysal üçin 8080 ýa-da 8081): ";
+        cout << ">>> Bu düwün üçin içki porty giriziň (mysal üçin 8080 ýa-da 8081): ";
         while (!(cin >> localPort)) {
             cout << "San giriziň: ";
             cin.clear(); cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -32,7 +32,7 @@ int main() {
         myNode.start_node();
 
         char connectChoice;
-        cout << ">>> Başga bir düwüne birikmelimi? (y/n): ";
+        cout << ">>> Başga bir düwüne birikmelimi? (yes/No): ";
         cin >> connectChoice;
         if (connectChoice == 'y' || connectChoice == 'Y') {
             string remoteHost, remotePort;
@@ -45,7 +45,7 @@ int main() {
 
         // --- MAIN LOOP ---
         while (true) {
-            cout << "\n--- ESASY MENÝU (Ýerli Port: " << localPort << ") ---" << endl;
+            cout << "\n--- ESASY MENÝU (Içki Port: " << localPort << ") ---" << endl;
             cout << "1. Täze töleg" << endl;
             cout << "2. Abonent maglumaty (tapylmasa döret)" << endl;
             cout << "3. Internet tizligini üýtget" << endl;
@@ -211,7 +211,7 @@ int main() {
             }
 
             default:
-                cout << "[ÝALŇYŞLYK]: Nädogry menýu opsiýasy." << endl;
+                cout << "[ÝALŇYŞLYK]: Nädogry menýu saýlawy." << endl;
                 break;
             }
         }

@@ -133,7 +133,7 @@ bool SmartContract::processService(Subscriber &subscriber, double payment, Servi
             break;
     }
 
-    cout << "\n[AKYLLY ŞERTNAMA]: Tassyklnýar " << serviceName << "..." << endl;
+    cout << "\n[AKYLLY ŞERTNAMA]: Tassyklanýar " << serviceName << "..." << endl;
 
     // If service is already active, just add payment to balance
     if (subscriber.remainingDays(*currentExpiry) > 0) {
