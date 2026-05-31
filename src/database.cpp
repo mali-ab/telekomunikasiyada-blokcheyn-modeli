@@ -47,8 +47,8 @@ void DatabaseManager::initTables() {
                 "phone_expiry TEXT);");
 
         W.commit();
-        std::cout << "[DATABASE]: All tables ready." << std::endl;
+        std::cout << "[MAGLUMAT BAZASY]: Ähli jedweller taýýar." << std::endl;
     } catch (const std::exception &e) {
-        std::cerr << "[INIT ERROR]: " << e.what() << std::endl;
+        std::cerr << "[BAŞLANGYÇ ÝALŇYŞLYGY]: " << e.what() << std::endl;
     }
 }
