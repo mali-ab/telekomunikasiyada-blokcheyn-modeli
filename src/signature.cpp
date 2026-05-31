@@ -107,13 +107,13 @@ bool DigitalSignature::loadKeys(RSAKeys& keys, const string& filename) {
 RSAKeys DigitalSignature::getKeys(const string& filename) {
     RSAKeys currentKeys;
     if (loadKeys(currentKeys, filename)) {
-        cout << "[INFO]: Keys loaded from file: " << filename << endl;
+        cout << "[MAGLUMAT]: Açarlar faýldan ýüklendi: " << filename << endl;
         return currentKeys;
     } else {
-        cout << "[WARNING]: File not found. Generating new RSA keys..." << endl;
+        cout << "[DUÝDURYŞ]: Faýl tapylmady. Täze RSA açarlary döredilýär..." << endl;
         RSAKeys newKeys = generateKeys();
         saveKeys(newKeys, filename);
-        cout << "[SUCCESS]: New keys generated and saved: " << filename << endl;
+        cout << "[ÜSTÜNLIK]: Täze açarlar döredildi we ýazdyryldy: " << filename << endl;
         return newKeys;
     }
 }

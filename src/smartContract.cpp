@@ -37,7 +37,7 @@ bool IPTVService::setTVCount(int newCount) {
         tvCount = newCount;
         return true;
     }
-    cout << "[ERROR]: TV count must be between 0 and 10!" << endl;
+    cout << "[ÝALŇYŞLYK]: TV sany 0 we 10 aralygynda bolmaly!" << endl;
     return false;
 }
 
@@ -133,13 +133,13 @@ bool SmartContract::processService(Subscriber &subscriber, double payment, Servi
             break;
     }
 
-    cout << "\n[SMART CONTRACT]: Validating " << serviceName << "..." << endl;
+    cout << "\n[AKYLLY ŞERTNAMA]: Tassyklnýar " << serviceName << "..." << endl;
 
     // If service is already active, just add payment to balance
     if (subscriber.remainingDays(*currentExpiry) > 0) {
         subscriber.balance += payment;
         updateSubscriberInDB(subscriber);
-        cout << "[INFO]: Service already active. Payment added to balance." << endl;
+        cout << "[MAGLUMAT]: Hyzmat eýýäm işjeň. Töleg balansa goşuldy." << endl;
         return false;
     }
 
@@ -149,11 +149,11 @@ bool SmartContract::processService(Subscriber &subscriber, double payment, Servi
         subscriber.balance = total - price;
         *currentExpiry = getCurrentTimestamp();
 
-        cout << "[SUCCESS]: " << serviceName << " activated!" << endl;
+        cout << "[ÜSTÜNLIK]: " << serviceName << " işjeňleşdirildi!" << endl;
         updateSubscriberInDB(subscriber);
         return true;
     } else {
-        cout << "[ERROR]: Insufficient balance. Required: " << price << " TMT" << endl;
+        cout << "[ÝALŇYŞLYK]: Balans ýeterlik däl. Gerekli: " << price << " TMT" << endl;
         return false;
     }
 }
@@ -182,9 +182,9 @@ void SmartContract::updateSubscriberInDB(const Subscriber &subscriber) {
 
         W.exec(sql);
         W.commit();
-        cout << "[DB]: '" << subscriber.name << "' record updated." << endl;
+        cout << "[MB]: '" << subscriber.name << "' ýazgysy täzelendi." << endl;
     } catch (const std::exception &e) {
-        cerr << "[DB UPDATE ERROR]: " << e.what() << endl;
+        cerr << "[MB TÄZELEME ÝALŇYŞLYGY]: " << e.what() << endl;
     }
 }
 
@@ -208,7 +208,7 @@ bool SmartContract::getSubscriberFromDB(const string &name, Subscriber &subscrib
             return true;
         }
     } catch (const std::exception &e) {
-        cerr << "[DB READ ERROR]: " << e.what() << endl;
+        cerr << "[MB OKAMA ÝALŇYŞLYGY]: " << e.what() << endl;
     }
     return false;
 }
@@ -263,7 +263,7 @@ void SmartContract::fullSystemAudit(const Blockchain& bc) {
     pqxx::nontransaction N(*C);
     pqxx::result R = N.exec("SELECT name, balance, internet_expiry, iptv_expiry, phone_expiry FROM subscribers");
 
-    cout << "\n========== [FULL SYSTEM AUDIT] ==========" << endl;
+    cout << "\n========== [DOLY ULGAM AUDITY] ==========" << endl;
 
     for (const auto &row : R) {
         string subscriberName = row["name"].as<string>();
@@ -276,30 +276,30 @@ void SmartContract::fullSystemAudit(const Blockchain& bc) {
             bool errorFound = false;
 
             if (abs(dbBalance - bcStates[subscriberName].balance) > 0.01) {
-                cout << "[CRITICAL]: " << subscriberName << " Balance TAMPERED! (DB: " << dbBalance << " / BC: " << bcStates[subscriberName].balance << ")" << endl;
+                cout << "[KRITIKI]: " << subscriberName << " Balans ÜÝTGEDILEN! (MB: " << dbBalance << " / BÇ: " << bcStates[subscriberName].balance << ")" << endl;
                 errorFound = true;
             }
 
             if (!bcStates[subscriberName].internetExpiry.empty() && dbIntExpiry != bcStates[subscriberName].internetExpiry) {
-                cout << "[WARNING]: " << subscriberName << " Internet expiry mismatch!" << endl;
+                cout << "[DUÝDURYŞ]: " << subscriberName << " Internet möhleti gabat gelmeýär!" << endl;
                 errorFound = true;
             }
 
             if (!bcStates[subscriberName].iptvExpiry.empty() && dbIptvExpiry != bcStates[subscriberName].iptvExpiry) {
-                cout << "[WARNING]: " << subscriberName << " IP-TV expiry mismatch!" << endl;
+                cout << "[DUÝDURYŞ]: " << subscriberName << " IP-TV möhleti gabat gelmeýär!" << endl;
                 errorFound = true;
             }
 
             if (!bcStates[subscriberName].phoneExpiry.empty() && dbPhoneExpiry != bcStates[subscriberName].phoneExpiry) {
-                cout << "[WARNING]: " << subscriberName << " Phone expiry mismatch!" << endl;
+                cout << "[DUÝDURYŞ]: " << subscriberName << " Telefon möhleti gabat gelmeýär!" << endl;
                 errorFound = true;
             }
 
             if (!errorFound) {
-                cout << "[OK]: " << subscriberName << " all records verified." << endl;
+                cout << "[OK]: " << subscriberName << " ähli ýazgylar tassyklandy." << endl;
             }
         } else {
-            cout << "[INFO]: " << subscriberName << " has no transactions on the blockchain yet." << endl;
+            cout << "[MAGLUMAT]: " << subscriberName << " üçin heniz blokçeýnde tranzaksiýa ýok." << endl;
         }
     }
     cout << "==========================================\n" << endl;

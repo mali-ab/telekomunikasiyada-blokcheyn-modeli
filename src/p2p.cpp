@@ -9,7 +9,7 @@ void P2PNode::start_node() {
         do_accept();
         io_context_.run();
     }).detach();
-    std::cout << "[P2P]: Node listening on port " << port_ << "..." << std::endl;
+    std::cout << "[P2P]: Düwün porty diňleýär " << port_ << "..." << std::endl;
 }
 
 void P2PNode::do_accept() {
@@ -19,7 +19,7 @@ void P2PNode::do_accept() {
             std::string peer_info = socket->remote_endpoint().address().to_string() +
                                     ":" + std::to_string(socket->remote_endpoint().port());
             if (connected_addresses_.find(peer_info) == connected_addresses_.end()) {
-                std::cout << "[P2P]: New peer connected: " << peer_info << std::endl;
+                std::cout << "[P2P]: Täze düwün birikdirildi: " << peer_info << std::endl;
                 peers_.push_back(socket);
                 connected_addresses_.insert(peer_info);
                 do_read(socket);
@@ -61,24 +61,24 @@ void P2PNode::handle_incoming_block(const std::string &message) {
         long long modN = std::stoll(nStr);
         std::string decrypted = DigitalSignature::decrypt(receivedSig, pubE, modN);
         if (decrypted == data) {
-            std::cout << "[P2P]: Signature verified." << std::endl;
+            std::cout << "[P2P]: Gol tassyklanyldy." << std::endl;
             blockchain_.AddBlock(Block(blockchain_.getLatestBlock().getIndex() + 1, data));
         }
     } catch (const std::exception& e) {
-        std::cerr << "[P2P ERROR]: Error in incoming block: " << e.what() << std::endl;
+        std::cerr << "[P2P ÝALŇYŞLYK]: Gelýän blokda ýalňyşlyk: " << e.what() << std::endl;
     }
 }
 
 void P2PNode::list_active_peers() {
-    std::cout << "\n--- ACTIVE P2P NETWORK NODES ---" << std::endl;
+    std::cout << "\n--- IŞJEŇ P2P TOR DÜWÜNLERI ---" << std::endl;
     if (connected_addresses_.empty()) {
-        std::cout << ">>> No other active nodes on the network." << std::endl;
+        std::cout << ">>> Torda başga işjeň düwün ýok." << std::endl;
     } else {
         int count = 1;
         for (const auto& addr : connected_addresses_) {
-            std::cout << " [" << count++ << "] IP/Port -> " << addr << " [CONNECTED]" << std::endl;
+            std::cout << " [" << count++ << "] IP/Port -> " << addr << " [BIRIKDIRILDI]" << std::endl;
         }
-        std::cout << ">>> Total: " << connected_addresses_.size() << " node(s) connected." << std::endl;
+        std::cout << ">>> Jemi: " << connected_addresses_.size() << " düwün birikdirildi." << std::endl;
     }
     std::cout << "--------------------------------\n" << std::endl;
 }
@@ -91,7 +91,7 @@ void P2PNode::connect_to_peer(const std::string &host, const std::string &port) 
     if (connected_addresses_.find(peer_info) == connected_addresses_.end()) {
         peers_.push_back(socket);
         connected_addresses_.insert(peer_info);
-        std::cout << "[P2P]: Connected to node " << peer_info << "." << std::endl;
+        std::cout << "[P2P]: Düwüne birikdirildi " << peer_info << "." << std::endl;
         do_read(socket);
     }
 }
@@ -100,5 +100,5 @@ void P2PNode::broadcast_message(const std::string &message) {
     for (auto& socket : peers_) {
         boost::asio::write(*socket, boost::asio::buffer(message + "\n"));
     }
-    std::cout << "[P2P]: New block broadcast to network." << std::endl;
+    std::cout << "[P2P]: Täze blok tora ýaýradyldy." << std::endl;
 }

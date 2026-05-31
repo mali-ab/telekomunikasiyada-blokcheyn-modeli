@@ -13,7 +13,7 @@ using namespace std;
 
 int main() {
     cout << "====================================================" << endl;
-    cout << "      TURKMENTELEKOM BLOCKCHAIN OPERATOR SYSTEM      " << endl;
+    cout << "      TÜRKMENTELEKOM BLOKÇEÝN OPERATOR ULGAMY      " << endl;
     cout << "====================================================\n" << endl;
 
     try {
@@ -21,9 +21,9 @@ int main() {
 
         // --- P2P PORT AND CONNECTION SETUP ---
         int localPort;
-        cout << ">>> Enter local port for this node (e.g. 8080 or 8081): ";
+        cout << ">>> Bu düwün üçin ýerli porty giriziň (mysal üçin 8080 ýa-da 8081): ";
         while (!(cin >> localPort)) {
-            cout << "Enter a number: ";
+            cout << "San giriziň: ";
             cin.clear(); cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
 
@@ -32,30 +32,30 @@ int main() {
         myNode.start_node();
 
         char connectChoice;
-        cout << ">>> Connect to another peer node? (y/n): ";
+        cout << ">>> Başga bir düwüne birikmelimi? (y/n): ";
         cin >> connectChoice;
         if (connectChoice == 'y' || connectChoice == 'Y') {
             string remoteHost, remotePort;
-            cout << ">>> Remote IP address (e.g. 127.0.0.1): ";
+            cout << ">>> Daşarky IP adresi (mysal üçin 127.0.0.1): ";
             cin >> remoteHost;
-            cout << ">>> Remote port (e.g. 8080): ";
+            cout << ">>> Daşarky port (mysal üçin 8080): ";
             cin >> remotePort;
             myNode.connect_to_peer(remoteHost, remotePort);
         }
 
         // --- MAIN LOOP ---
         while (true) {
-            cout << "\n--- MAIN MENU (Local Port: " << localPort << ") ---" << endl;
-            cout << "1. New payment" << endl;
-            cout << "2. Subscriber info (create if not found)" << endl;
-            cout << "3. Change internet speed" << endl;
-            cout << "4. Change IPTV channel count" << endl;
-            cout << "5. List active P2P peers" << endl;
-            cout << "6. Display blockchain" << endl;
-            cout << "7. Audit blockchain integrity" << endl;
-            cout << "8. Full system audit (DB vs Blockchain)" << endl;
-            cout << "9. Exit" << endl;
-            cout << "Your choice: ";
+            cout << "\n--- ESASY MENÝU (Ýerli Port: " << localPort << ") ---" << endl;
+            cout << "1. Täze töleg" << endl;
+            cout << "2. Abonent maglumaty (tapylmasa döret)" << endl;
+            cout << "3. Internet tizligini üýtget" << endl;
+            cout << "4. IPTV kanal sanyny üýtget" << endl;
+            cout << "5. Işjeň P2P düwünlerini görkez" << endl;
+            cout << "6. Blokçeýni görkez" << endl;
+            cout << "7. Blokçeýniň bitewiligini barlamak" << endl;
+            cout << "8. Doly ulgam audity (DB vs Blokçeýn)" << endl;
+            cout << "9. Çykyş" << endl;
+            cout << "Siziň saýlawyňyz: ";
 
             int choice;
             if (!(cin >> choice)) {
@@ -87,98 +87,98 @@ int main() {
 
             case 4: {
                 string subscriberName;
-                cout << "\nEnter subscriber name: ";
+                cout << "\nAbonentiň adyny giriziň: ";
                 getline(cin, subscriberName);
 
                 Subscriber sub(subscriberName);
                 if (SmartContract::getSubscriberFromDB(subscriberName, sub)) {
-                    cout << "[INFO]: Subscriber found." << endl;
-                    cout << "[INFO]: IPTV channels: " << sub.iptv.tvCount << endl;
+                    cout << "[MAGLUMAT]: Abonent tapyldy." << endl;
+                    cout << "[MAGLUMAT]: IPTV kanallary: " << sub.iptv.tvCount << endl;
 
-                    cout << "New IPTV channel count (1-10): ";
+                    cout << "Täze IPTV kanal sany (1-10): ";
                     int newCount;
                     while (!(cin >> newCount) || newCount < 1 || newCount > 10) {
-                        cout << "Enter a number between 1 and 10: ";
+                        cout << "1 we 10 aralygynda san giriziň: ";
                         cin.clear(); cin.ignore(numeric_limits<streamsize>::max(), '\n');
                     }
                     if (sub.iptv.setTVCount(newCount)) {
                         SmartContract::updateSubscriberInDB(sub);
-                        cout << "[INFO]: IPTV channel count updated!" << endl;
+                        cout << "[MAGLUMAT]: IPTV kanal sany täzelendi!" << endl;
                     }
                 } else {
-                    cout << "[ERROR]: Subscriber not found!" << endl;
+                    cout << "[ÝALŇYŞLYK]: Abonent tapylmady!" << endl;
                 }
                 break;
             }
 
             case 3: {
                 string subscriberName;
-                cout << "\nEnter subscriber name: ";
+                cout << "\nAbonentiň adyny giriziň: ";
                 getline(cin, subscriberName);
 
                 Subscriber sub(subscriberName);
                 if (SmartContract::getSubscriberFromDB(subscriberName, sub)) {
-                    cout << "[INFO]: Subscriber found." << endl;
-                    cout << "[INFO]: Internet speed: " << sub.internet.speed << " Mbit/s" << endl;
+                    cout << "[MAGLUMAT]: Abonent tapyldy." << endl;
+                    cout << "[MAGLUMAT]: Internet tizligi: " << sub.internet.speed << " Mbit/s" << endl;
 
-                    cout << "New internet speed (1, 2, 4 or 6 Mbit/s): ";
+                    cout << "Täze internet tizligi (1, 2, 4 ýa-da 6 Mbit/s): ";
                     string newSpeed;
                     while (!(cin >> newSpeed) || (newSpeed != "1" && newSpeed != "2" && newSpeed != "4" && newSpeed != "6")) {
-                        cout << "Enter 1, 2, 4 or 6: ";
+                        cout << "1, 2, 4 ýa-da 6 giriziň: ";
                         cin.clear(); cin.ignore(numeric_limits<streamsize>::max(), '\n');
                     }
                     if (sub.internet.setSpeed(newSpeed)) {
                         SmartContract::updateSubscriberInDB(sub);
-                        cout << "[INFO]: Internet speed updated!" << endl;
+                        cout << "[MAGLUMAT]: Internet tizligi täzelendi!" << endl;
                     }
                 } else {
-                    cout << "[ERROR]: Subscriber not found!" << endl;
+                    cout << "[ÝALŇYŞLYK]: Abonent tapylmady!" << endl;
                 }
                 break;
             }
 
             case 2: {
                 string subscriberName;
-                cout << "\nEnter subscriber name: ";
+                cout << "\nAbonentiň adyny giriziň: ";
                 getline(cin, subscriberName);
 
                 Subscriber sub(subscriberName);
                 if (SmartContract::getSubscriberFromDB(subscriberName, sub)) {
-                    cout << "[INFO]: Subscriber found." << endl;
-                    cout << "[INFO]: Balance: " << sub.balance << " TMT" << endl;
-                    cout << "[INFO]: Internet: " << (sub.internetExpiry != "Inactive" ? "Active. Speed " + sub.internet.speed + " Mbit/s. Days left: " + to_string(sub.remainingDays(sub.internetExpiry)) : "Inactive") << endl;
-                    cout << "[INFO]: IP-TV: " << (sub.iptvExpiry != "Inactive" ? "Active. Days left: " + to_string(sub.remainingDays(sub.iptvExpiry)) : "Inactive") << endl;
-                    cout << "[INFO]: Phone: " << (sub.phoneExpiry != "Inactive" ? "Active. Days left: " + to_string(sub.remainingDays(sub.phoneExpiry)) : "Inactive") << endl;
+                    cout << "[MAGLUMAT]: Abonent tapyldy." << endl;
+                    cout << "[MAGLUMAT]: Balans: " << sub.balance << " TMT" << endl;
+                    cout << "[MAGLUMAT]: Internet: " << (sub.internetExpiry != "Inactive" ? "Işjeň. Tizlik " + sub.internet.speed + " Mbit/s. Galan günler: " + to_string(sub.remainingDays(sub.internetExpiry)) : "Işjeň däl") << endl;
+                    cout << "[MAGLUMAT]: IP-TV: " << (sub.iptvExpiry != "Inactive" ? "Işjeň. Galan günler: " + to_string(sub.remainingDays(sub.iptvExpiry)) : "Işjeň däl") << endl;
+                    cout << "[MAGLUMAT]: Telefon: " << (sub.phoneExpiry != "Inactive" ? "Işjeň. Galan günler: " + to_string(sub.remainingDays(sub.phoneExpiry)) : "Işjeň däl") << endl;
                 } else {
                     SmartContract::updateSubscriberInDB(Subscriber(subscriberName));
-                    cout << "[INFO]: New subscriber registered!" << endl;
+                    cout << "[MAGLUMAT]: Täze abonent hasaba alyndy!" << endl;
                 }
                 break;
             }
 
             case 1: {
                 string subscriberName;
-                cout << "\nEnter subscriber name: ";
+                cout << "\nAbonentiň adyny giriziň: ";
                 getline(cin, subscriberName);
 
                 Subscriber sub(subscriberName);
-                cout << "[INFO]: Subscriber balance: " << sub.balance << " TMT" << endl;
+                cout << "[MAGLUMAT]: Abonentiň balanysy: " << sub.balance << " TMT" << endl;
 
                 int serviceChoice;
-                cout << "\nSelect service:\n";
+                cout << "\nHyzmaty saýlaň:\n";
                 cout << "1. Internet " + to_string(sub.internet.getPrice()) + " TMT" << endl;
                 cout << "2. IPTV " + to_string(sub.iptv.getPrice()) + " TMT" << endl;
-                cout << "3. Phone " + to_string(sub.phone.getPrice()) + " TMT" << endl;
-                cout << "Choice: ";
+                cout << "3. Telefon " + to_string(sub.phone.getPrice()) + " TMT" << endl;
+                cout << "Saýlawyňyz: ";
                 while (!(cin >> serviceChoice) || serviceChoice < 1 || serviceChoice > 3) {
-                    cout << "Invalid choice! (1-3): ";
+                    cout << "Nädogry saýlaw! (1-3): ";
                     cin.clear(); cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
 
                 double paymentAmount;
-                cout << "Payment amount: ";
+                cout << "Töleg möçberi: ";
                 while (!(cin >> paymentAmount)) {
-                    cout << "Enter a number: ";
+                    cout << "San giriziň: ";
                     cin.clear(); cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
 
@@ -197,33 +197,33 @@ int main() {
                 }
 
                 if (decryptedData == txData) {
-                    cout << "[INFO]: RSA SIGNATURE VERIFIED." << endl;
+                    cout << "[MAGLUMAT]: RSA GOLY TASSYKLANDY." << endl;
 
                     SmartContract::processService(sub, paymentAmount, serviceType);
                     blockchain.AddBlock(Block(blockchain.getLatestBlock().getIndex() + 1, txData));
                     string p2pMsg = "NEW_BLOCK|" + txData + "|" + sigStr + "|" + to_string(keys.e) + "|" + to_string(keys.n);
                     myNode.broadcast_message(p2pMsg);
-                    cout << "[SUCCESS]: Block broadcast to network." << endl;
+                    cout << "[ÜSTÜNLIK]: Blok tora ýaýradyldy." << endl;
                 } else {
-                    cout << "[ERROR]: Cryptographic verification failed!" << endl;
+                    cout << "[ÝALŇYŞLYK]: Kriptografik barlag şowsuz!" << endl;
                 }
                 break;
             }
 
             default:
-                cout << "[ERROR]: Invalid menu option." << endl;
+                cout << "[ÝALŇYŞLYK]: Nädogry menýu opsiýasy." << endl;
                 break;
             }
         }
         exit_loop:;
 
     } catch (const std::exception &e) {
-        cerr << "\n[CRITICAL ERROR]: " << e.what() << endl;
+        cerr << "\n[KRITIKI ÝALŇYŞLYK]: " << e.what() << endl;
         return 1;
     }
 
     cout << "====================================================" << endl;
-    cout << "                   SYSTEM CLOSED                     " << endl;
+    cout << "                   ULGAM ÝAPYLDY                     " << endl;
     cout << "====================================================\n" << endl;
     return 0;
 }

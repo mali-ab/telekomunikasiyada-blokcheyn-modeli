@@ -56,7 +56,7 @@ Blockchain::Blockchain() {
             saveBlockToDB(genesis);
         }
     } catch (const std::exception &e) {
-        cerr << "[ERROR]: " << e.what() << endl;
+        cerr << "[ÝALŇYŞLYK]: " << e.what() << endl;
     }
 }
 
@@ -87,9 +87,9 @@ void Blockchain::saveBlockToDB(const Block &block) {
 
         W.exec(sql);
         W.commit();
-        cout << "[DATABASE]: Block saved to database." << endl;
+        cout << "[MAGLUMAT BAZASY]: Blok maglumat bazasyna ýazdyryldy." << endl;
     } catch (const std::exception &e) {
-        cerr << "[DB ERROR]: " << e.what() << endl;
+        cerr << "[MB ÝALŇYŞLYK]: " << e.what() << endl;
     }
 }
 
@@ -117,19 +117,19 @@ void Blockchain::loadChainFromDB() {
         }
 
         if (!vChain.empty()) {
-            cout << "[DATABASE]: " << vChain.size() << " blocks loaded from database." << endl;
+            cout << "[MAGLUMAT BAZASY]: " << vChain.size() << " blok maglumat bazasyndan ýüklendi." << endl;
         }
 
     } catch (const std::exception &e) {
-        cerr << "[DB LOAD ERROR]: " << e.what() << endl;
+        cerr << "[MB ÝÜKLEME ÝALŇYŞLYGY]: " << e.what() << endl;
     }
 }
 
 // --- Display all blocks in the chain ---
 void Blockchain::listAllBlocks() const {
-    cout << "\n--- BLOCK CHAIN ---" << endl;
+    cout << "\n--- BLOKÇEÝN ---" << endl;
     for (const auto &block : vChain) {
-        cout << "Index: " << block.getIndex() << ", Hash: " << block.sHash << ", Data: " << block.sData << endl;
+        cout << "Indeks: " << block.getIndex() << ", Heş: " << block.sHash << ", Maglumat: " << block.sData << endl;
     }
     cout << "-------------------\n" << endl;
 }
@@ -149,12 +149,12 @@ bool Blockchain::isChainValid(size_t index) {
     recalculated.MineBlock(nDifficulty);
 
     if (currentBlock.sHash != recalculated.sHash) {
-        cout << "[HACK ALERT]: Block " << index << " data or hash has been tampered!" << endl;
+        cout << "[HOWPSUZLYK DUÝDURYŞY]: Blok " << index << " maglumaty ýa-da heşi üýtgedilipdir!" << endl;
         return false;
     }
 
     if (currentBlock.sPrevHash != prevBlock.sHash) {
-        cout << "[HACK ALERT]: Block " << index << " is broken from chain (PrevHash mismatch)!" << endl;
+        cout << "[HOWPSUZLYK DUÝDURYŞY]: Blok " << index << " zynjyrdan üzüldi (Öňki heş gabat gelmeýär)!" << endl;
         return false;
     }
 
@@ -175,9 +175,9 @@ bool Blockchain::fullAudit() {
     }
 
     if (totalValid) {
-        cout << "[AUDIT]: Blockchain is fully intact and valid." << endl;
+        cout << "[AUDIT]: Blokçeýn doly we dogry." << endl;
     } else {
-        cout << "[CRITICAL]: Blockchain manipulation detected!" << endl;
+        cout << "[KRITIKI]: Blokçeýn manipulýasiýasy ýüze çykaryldy!" << endl;
     }
 
     return totalValid;
