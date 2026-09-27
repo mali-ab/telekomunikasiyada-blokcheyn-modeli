@@ -1,10 +1,14 @@
 #include "database.h"
 
-pqxx::connection* DatabaseManager::conn = nullptr;
+std::unique_ptr<pqxx::connection> DatabaseManager::conn;
 
 std::map<std::string, std::string> DatabaseManager::loadEnv() {
     std::map<std::string, std::string> env;
-    std::ifstream file(".env");
+    std::ifstream file;
+    for (const char *path : {".env", "../.env"}) {
+        file.open(path);
+        if (file.is_open()) break;
+    }
     std::string line;
     while (std::getline(file, line)) {
         size_t pos = line.find('=');
@@ -16,13 +20,21 @@ std::map<std::string, std::string> DatabaseManager::loadEnv() {
 }
 
 pqxx::connection* DatabaseManager::getConnection() {
-    if (conn == nullptr) {
+    if (!conn || !conn->is_open()) {
         auto env = loadEnv();
         std::string conn_str = "dbname=" + env["DB_NAME"] + " user=" + env["DB_USER"] +
                                " password=" + env["DB_PASS"] + " host=" + env["DB_HOST"];
-        conn = new pqxx::connection(conn_str);
+        if (env.count("DB_PORT") && !env["DB_PORT"].empty()) {
+            conn_str += " port=" + env["DB_PORT"];
+        }
+        conn = std::make_unique<pqxx::connection>(conn_str);
     }
-    return conn;
+    return conn.get();
+}
+
+bool DatabaseManager::isConnected() {
+    try { return getConnection()->is_open(); }
+    catch (...) { return false; }
 }
 
 void DatabaseManager::initTables() {
@@ -40,11 +52,15 @@ void DatabaseManager::initTables() {
         W.exec("CREATE TABLE IF NOT EXISTS subscribers ("
                 "name TEXT PRIMARY KEY, "
                 "balance NUMERIC(10, 2), "
-                "internet_expiry TEXT, "
+                "internet_expiry TIMESTAMPTZ, "
                 "internet_speed TEXT, "
-                "iptv_expiry TEXT, "
-                "iptv_count TEXT, "
-                "phone_expiry TEXT);");
+                "iptv_expiry TIMESTAMPTZ, "
+                "iptv_count INTEGER, "
+                "phone_expiry TIMESTAMPTZ);");
+        W.exec("ALTER TABLE subscribers ALTER COLUMN internet_expiry TYPE TIMESTAMPTZ USING NULLIF(internet_expiry::text, 'Inactive')::TIMESTAMPTZ");
+        W.exec("ALTER TABLE subscribers ALTER COLUMN iptv_expiry TYPE TIMESTAMPTZ USING NULLIF(iptv_expiry::text, 'Inactive')::TIMESTAMPTZ");
+        W.exec("ALTER TABLE subscribers ALTER COLUMN phone_expiry TYPE TIMESTAMPTZ USING NULLIF(phone_expiry::text, 'Inactive')::TIMESTAMPTZ");
+        W.exec("ALTER TABLE subscribers ALTER COLUMN iptv_count TYPE INTEGER USING NULLIF(iptv_count::text, '')::INTEGER");
 
         W.commit();
         std::cout << "[MAGLUMAT BAZASY]: Ähli jedweller taýýar." << std::endl;

@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: telekom-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: telekom_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - telekom_pg_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d telekom_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  telekom_pg_data:

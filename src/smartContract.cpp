@@ -42,14 +42,14 @@ bool IPTVService::setTVCount(int newCount) {
 }
 
 // --- Subscriber constructor: load from DB or create new ---
-Subscriber::Subscriber(const string &subscriberName) {
-    if (!SmartContract::getSubscriberFromDB(subscriberName, *this)) {
-        name = subscriberName;
-        balance = 0.0;
-        internetExpiry = "Inactive";
-        iptvExpiry = "Inactive";
-        phoneExpiry = "Inactive";
-    }
+Subscriber::Subscriber(const string &subscriberName, bool loadFromDatabase) {
+    if (loadFromDatabase && SmartContract::getSubscriberFromDB(subscriberName, *this)) return;
+
+    name = subscriberName;
+    balance = 0.0;
+    internetExpiry = "Inactive";
+    iptvExpiry = "Inactive";
+    phoneExpiry = "Inactive";
 }
 
 // --- Calculate remaining days until service expires ---
@@ -158,6 +158,16 @@ bool SmartContract::processService(Subscriber &subscriber, double payment, Servi
     }
 }
 
+string SmartContract::getPlanChangeData(const Subscriber &before, const Subscriber &after) {
+    return "Subscriber: " + after.name +
+           ", Service: Plan update" +
+           ", Internet speed: " + before.internet.speed + " -> " + after.internet.speed + " Mbit/s" +
+           ", IPTV channels: " + to_string(before.iptv.tvCount) + " -> " + to_string(after.iptv.tvCount) +
+           ", Previous balance: " + to_string(before.balance) + " TMT" +
+           ", Payment: 0 TMT, Price: 0 TMT, New balance: " + to_string(after.balance) +
+           " TMT, Timestamp: " + getCurrentTimestamp();
+}
+
 // --- Insert or update subscriber record in database ---
 void SmartContract::updateSubscriberInDB(const Subscriber &subscriber) {
     try {
@@ -167,11 +177,11 @@ void SmartContract::updateSubscriberInDB(const Subscriber &subscriber) {
         string sql = "INSERT INTO subscribers (name, balance, internet_expiry, internet_speed, iptv_expiry, iptv_count, phone_expiry) VALUES (" +
                         W.quote(subscriber.name) + ", " +
                         to_string(subscriber.balance) + ", " +
-                        W.quote(subscriber.internetExpiry) + ", " +
+                        "NULLIF(" + W.quote(subscriber.internetExpiry) + ", 'Inactive')::TIMESTAMPTZ, " +
                         W.quote(subscriber.internet.speed) + ", " +
-                        W.quote(subscriber.iptvExpiry) + ", " +
+                        "NULLIF(" + W.quote(subscriber.iptvExpiry) + ", 'Inactive')::TIMESTAMPTZ, " +
                         to_string(subscriber.iptv.tvCount) + ", " +
-                        W.quote(subscriber.phoneExpiry) + ") " +
+                        "NULLIF(" + W.quote(subscriber.phoneExpiry) + ", 'Inactive')::TIMESTAMPTZ) " +
                         "ON CONFLICT (name) DO UPDATE SET " +
                         "balance = EXCLUDED.balance, " +
                         "internet_expiry = EXCLUDED.internet_expiry, " +
@@ -194,7 +204,7 @@ bool SmartContract::getSubscriberFromDB(const string &name, Subscriber &subscrib
         pqxx::connection* C = DatabaseManager::getConnection();
         pqxx::nontransaction N(*C);
 
-        string sql = "SELECT balance, internet_expiry, internet_speed, iptv_expiry, iptv_count, phone_expiry FROM subscribers WHERE name = " + N.quote(name) + ";";
+        string sql = "SELECT balance, COALESCE(TO_CHAR(internet_expiry, 'YYYY-MM-DD HH24:MI:SS'), 'Inactive') AS internet_expiry, internet_speed, COALESCE(TO_CHAR(iptv_expiry, 'YYYY-MM-DD HH24:MI:SS'), 'Inactive') AS iptv_expiry, iptv_count, COALESCE(TO_CHAR(phone_expiry, 'YYYY-MM-DD HH24:MI:SS'), 'Inactive') AS phone_expiry FROM subscribers WHERE name = " + N.quote(name) + ";";
         pqxx::result R = N.exec(sql);
 
         if (!R.empty()) {
@@ -261,7 +271,7 @@ void SmartContract::fullSystemAudit(const Blockchain& bc) {
     // Compare with database
     pqxx::connection* C = DatabaseManager::getConnection();
     pqxx::nontransaction N(*C);
-    pqxx::result R = N.exec("SELECT name, balance, internet_expiry, iptv_expiry, phone_expiry FROM subscribers");
+    pqxx::result R = N.exec("SELECT name, balance, COALESCE(TO_CHAR(internet_expiry, 'YYYY-MM-DD HH24:MI:SS'), 'Inactive') AS internet_expiry, COALESCE(TO_CHAR(iptv_expiry, 'YYYY-MM-DD HH24:MI:SS'), 'Inactive') AS iptv_expiry, COALESCE(TO_CHAR(phone_expiry, 'YYYY-MM-DD HH24:MI:SS'), 'Inactive') AS phone_expiry FROM subscribers");
 
     cout << "\n========== [DOLY ULGAM AUDITY] ==========" << endl;
 

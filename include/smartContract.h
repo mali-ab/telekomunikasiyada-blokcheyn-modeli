@@ -72,7 +72,9 @@ struct Subscriber {
     std::string iptvExpiry;
     std::string phoneExpiry;
 
-    Subscriber(const std::string &subscriberName);
+    // Set loadFromDatabase to false when the caller already has every field,
+    // avoiding a redundant query while constructing a display model.
+    Subscriber(const std::string &subscriberName, bool loadFromDatabase = true);
 
     int remainingDays(const std::string &expiry) const;
     bool isServiceActive(ServiceType type) const;
@@ -84,6 +86,7 @@ struct Subscriber {
 class SmartContract {
 public:
     static bool processService(Subscriber &subscriber, double payment, ServiceType service);
+    static std::string getPlanChangeData(const Subscriber &before, const Subscriber &after);
 
     static void updateSubscriberInDB(const Subscriber &subscriber);
     static bool getSubscriberFromDB(const std::string &name, Subscriber &subscriber);
