@@ -3,3 +3,4 @@ obj/*
 main.o
 keys*.txt
 telekom_system
+build-console/

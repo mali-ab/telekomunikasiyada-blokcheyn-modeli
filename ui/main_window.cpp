@@ -13,6 +13,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include <ctime>
+
 #include "blockchain.h"
 #include "database.h"
 #include "signature.h"
@@ -89,6 +91,16 @@ int MainWindow::countSubscribers() {
 
 void MainWindow::refreshDashboard() {
     if (!subscriberMetric_) return;
+    const bool connected = DatabaseManager::isConnected();
+    if (databaseMetric_) databaseMetric_->setText(connected ? "Online" : "Offline");
+    if (!connected) {
+        subscriberMetric_->setText("—");
+        if (blockMetric_) blockMetric_->setText("—");
+        if (paymentsMetric_) paymentsMetric_->setText("—");
+        if (paymentsDetail_) paymentsDetail_->setText("Database unavailable — check connection settings.");
+        if (recentTable_) setTableRows(recentTable_, {});
+        return;
+    }
     subscriberMetric_->setText(QString::number(countSubscribers()));
     if (!blockchain_) return;
     const auto blocks = blockchain_->getAllBlocks();
@@ -137,39 +149,84 @@ void MainWindow::refreshBlocks() {
     if (!blockTable_ || !blockchain_) return;
     QList<QStringList> rows;
     const auto blocks = blockchain_->getAllBlocks();
+    const bool currentAudit = auditRan_ && auditedBlockCount_ == blocks.size();
     for (int i = static_cast<int>(blocks.size()) - 1; i >= 0; --i) {
         const Block &block = blocks[static_cast<size_t>(i)];
         rows.append({QString("#%1").arg(block.getIndex()), formatBlockTime(block.tTime), blockSummary(block), truncateHash(block.sPrevHash),
-                     block.sData == "Genesis Block" ? "Genesis" : "Verified"});
+                     block.sData == "Genesis Block" ? "Genesis" : (!auditRan_ ? "Not audited" : !currentAudit ? "Audit out of date" : (auditPassed_ ? "Audit passed" : "Audit failed"))});
     }
     setTableRows(blockTable_, rows);
-    if (blockCount_) blockCount_->setText(QString("%1 blocks • SHA-256 • RSA verified").arg(blocks.size()));
+    if (blockCount_) blockCount_->setText(QString("%1 blocks • SHA-256 proof of work").arg(blocks.size()));
+    if (auditStatus_ && auditDetail_) {
+        auditStatus_->setText(!auditRan_ ? "●  Audit not run" :
+                              !currentAudit ? "●  Audit out of date" :
+                              auditPassed_ ? "●  Audit passed" : "●  Audit failed");
+        auditStatus_->setObjectName(currentAudit && auditPassed_ ? "successTag" : currentAudit ? "statusError" : "tag");
+        auditStatus_->style()->unpolish(auditStatus_);
+        auditStatus_->style()->polish(auditStatus_);
+        auditDetail_->setText(currentAudit ? (auditPassed_ ? "All loaded blocks passed the latest integrity check." : "Integrity verification found a chain problem.") : "Run an integrity audit after ledger changes.");
+    }
 }
 
 bool MainWindow::processPayment(const QString &subscriberName, ServiceType service, double amount, QString *errorOut) {
-    if (!blockchain_) { if (errorOut) *errorOut = "Blockchain is not available."; return false; }
-    const std::string name = subscriberName.trimmed().toStdString();
-    if (name.empty()) { if (errorOut) *errorOut = "Enter a subscriber name."; return false; }
-    Subscriber subscriber(name, false);
-    if (!SmartContract::getSubscriberFromDB(name, subscriber)) {
-        SmartContract::updateSubscriberInDB(subscriber);
-    }
-    const std::string transactionData = subscriber.getTransactionData(service, amount);
-    const RSAKeys keys = DigitalSignature::getKeys("keys_" + subscriber.name + ".txt");
-    const std::vector<long long> signature = DigitalSignature::encrypt(transactionData, keys.d, keys.n);
-    if (DigitalSignature::decrypt(signature, keys.e, keys.n) != transactionData) {
-        if (errorOut) *errorOut = "RSA signature verification failed.";
+    if (!blockchain_) {
+        if (errorOut) *errorOut = "Blockchain is not available.";
         return false;
     }
-    SmartContract::processService(subscriber, amount, service);
-    blockchain_->AddBlock(Block(blockchain_->getLatestBlock().getIndex() + 1, transactionData));
-    return true;
+    try {
+        const std::string name = subscriberName.trimmed().toStdString();
+        if (name.empty()) {
+            if (errorOut) *errorOut = "Enter a subscriber name.";
+            return false;
+        }
+
+        Subscriber before(name, false);
+        if (!SmartContract::getSubscriberFromDB(name, before)) {
+            if (errorOut) *errorOut = "Subscriber not found. Create the account before accepting a payment.";
+            return false;
+        }
+        Subscriber after = before;
+        std::string validationError;
+        const std::time_t processedAt = std::time(nullptr);
+        if (!SmartContract::processService(after, amount, service, &validationError, processedAt)) {
+            if (errorOut) *errorOut = QString::fromStdString(validationError);
+            return false;
+        }
+
+        const std::string transactionData = SmartContract::getPaymentData(before, after, service, amount, processedAt);
+        const RSAKeys keys = DigitalSignature::getKeys("keys_" + after.name + ".txt");
+        const std::vector<long long> signature = DigitalSignature::encrypt(transactionData, keys.d, keys.n);
+        if (DigitalSignature::decrypt(signature, keys.e, keys.n) != transactionData) {
+            if (errorOut) *errorOut = "RSA signature verification failed.";
+            return false;
+        }
+
+        blockchain_->AddBlockWithMutation(Block(0, transactionData), [&after](pqxx::work &transaction) {
+            SmartContract::updateSubscriberInDB(after, transaction);
+        });
+        return true;
+    } catch (const std::exception &e) {
+        if (errorOut) *errorOut = QString("Payment could not be committed: %1").arg(e.what());
+        return false;
+    }
 }
 
 void MainWindow::runAudit() {
     if (!blockchain_) { showToast("Blockchain not loaded.", true); return; }
-    const bool ok = blockchain_->fullAudit();
-    showToast(ok ? "Integrity audit passed — all blocks are valid." : "Audit failed — chain integrity issue detected.", !ok);
+    try {
+        const bool ok = blockchain_->fullAudit();
+        auditRan_ = true;
+        auditPassed_ = ok;
+        auditedBlockCount_ = blockchain_->getAllBlocks().size();
+        refreshBlocks();
+        showToast(ok ? "Integrity audit passed — all blocks are valid." : "Audit failed — chain integrity issue detected.", !ok);
+    } catch (const std::exception &e) {
+        auditRan_ = false;
+        auditPassed_ = false;
+        auditedBlockCount_ = 0;
+        refreshBlocks();
+        showToast(QString("Audit could not run: %1").arg(e.what()), true);
+    }
 }
 
 void MainWindow::showToast(const QString &message, bool error) {

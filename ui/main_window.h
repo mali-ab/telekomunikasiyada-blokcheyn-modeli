@@ -2,6 +2,7 @@
 
 #include <QMainWindow>
 
+#include <cstddef>
 #include <memory>
 
 class Blockchain;
@@ -27,9 +28,15 @@ private:
     QLabel *toast_ = nullptr;
     QLabel *nodeStatus_ = nullptr;
     QLabel *subscriberMetric_ = nullptr;
+    QLabel *databaseMetric_ = nullptr;
     QLabel *blockMetric_ = nullptr;
     QLabel *paymentsMetric_ = nullptr;
     QLabel *paymentsDetail_ = nullptr;
+    QLabel *auditStatus_ = nullptr;
+    QLabel *auditDetail_ = nullptr;
+    std::size_t auditedBlockCount_ = 0;
+    bool auditRan_ = false;
+    bool auditPassed_ = false;
 
     QWidget *cardWithValue(const QString &value, const QString &caption, const QString &detail, QLabel **valueOut);
     QWidget *pageHeader(const QString &title, const QString &subtitle, QWidget *right = nullptr);

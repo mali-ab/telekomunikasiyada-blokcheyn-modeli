@@ -1,0 +1,6 @@
+set(__QT_DEPLOY_TARGET_telekom_core_FILE /home/user/src/telekomunikasiyada-blokcheyn-modeli/build/libtelekom_core.a)
+set(__QT_DEPLOY_TARGET_telekom_core_TYPE STATIC_LIBRARY)
+set(__QT_DEPLOY_TARGET_telekom_desktop_FILE /home/user/src/telekomunikasiyada-blokcheyn-modeli/build/telekom_desktop)
+set(__QT_DEPLOY_TARGET_telekom_desktop_TYPE EXECUTABLE)
+set(__QT_DEPLOY_TARGET_telekom_domain_tests_FILE /home/user/src/telekomunikasiyada-blokcheyn-modeli/build/telekom_domain_tests)
+set(__QT_DEPLOY_TARGET_telekom_domain_tests_TYPE EXECUTABLE)

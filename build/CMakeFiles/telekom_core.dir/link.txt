@@ -1,0 +1,2 @@
+/usr/bin/ar qc libtelekom_core.a CMakeFiles/telekom_core.dir/src/blockchain.cpp.o CMakeFiles/telekom_core.dir/src/database.cpp.o CMakeFiles/telekom_core.dir/src/signature.cpp.o CMakeFiles/telekom_core.dir/src/smartContract.cpp.o CMakeFiles/telekom_core.dir/src/subscriber_repository.cpp.o
+/usr/bin/ranlib libtelekom_core.a

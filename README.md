@@ -1,140 +1,110 @@
-# 🌐 Blockchain Model for Telecommunications (Turkmentelekom)
+# Blockchain Model for Telecommunications (TürkmenTelekom)
 
-This project is a **Distributed Ledger Technology (DLT)** model developed using the example of **"Turkmentelekom" telecommunications company**, designed for managing services, automating payments, and ensuring data security.
+A C++17 telecom-operator prototype for managing subscribers, prepaid services, and an append-only audit ledger. PostgreSQL stores subscriber state and blocks; the Qt desktop app is the primary operator interface, while the console app contains an experimental Boost.Asio peer-to-peer demo.
 
-## 🖥 Desktop UI (Windows + Linux)
+This is an educational model, not a production distributed ledger or telecom billing platform. PostgreSQL is still a shared central dependency, and the P2P protocol has no authenticated peer identity, TLS, consensus, or chain synchronisation.
 
-The project now includes a native desktop operator interface built with **Qt Widgets**. It provides an overview dashboard, subscriber search and onboarding, payment creation, blockchain/audit view, P2P network view, and settings. It uses the native window decorations and fonts of the operating system, so it feels at home on Windows and Linux.
+## What the application does
 
-The desktop UI loads subscribers and blocks from PostgreSQL, creates payments through the same RSA + smart-contract + blockchain pipeline as the console app, and refreshes views after each change. Start the database (`docker compose up -d`) and run the app from the project root or from `build/` (it looks for `.env` in the current directory or one level up). P2P networking remains in the `telekom_system` console app.
+- Registers subscribers and maintains Internet, IPTV, and phone plans.
+- Accepts only positive payments that cover the selected service after available balance is considered.
+- Activates a service for 30 days or renews it from its current expiry, preserving remaining days.
+- Writes the subscriber mutation and its ledger event in one PostgreSQL transaction.
+- Mines a SHA-256 proof-of-work block, stores its nonce and hash version, and supports integrity audits.
+- Records plan changes as zero-payment ledger events.
 
-### Build the desktop application
+The desktop P2P and Settings pages are intentionally informational: peer networking and its runtime settings are available only in `telekom_system`.
 
-Install Qt 6 development tools (Qt 5 is also supported) and CMake, then run:
+## Quick start
+
+### 1. Start PostgreSQL
+
+The supplied Compose configuration and `.env.example` use the same local values. Copy it before running an app:
 
 ```bash
-cmake -S . -B build -DBUILD_CONSOLE=OFF
-cmake --build build --config Release
-```
-
-### Run the desktop application
-
-Before launching, copy `.env.example` to `.env` if needed, enter the PostgreSQL connection values, and start the database:
-
-```bash
+cp .env.example .env
 docker compose up -d
 ```
 
-Launch the UI from the project root so it can find `.env`:
+PostgreSQL is exposed on host port `5434`. Change both `.env` and `docker-compose.yml` if you need different local credentials or a different port.
 
-```bash
-# Linux / single-config CMake generators
-./build/telekom_desktop
+### 2. Install build dependencies
 
-# macOS
-./build/telekom_desktop.app/Contents/MacOS/telekom_desktop
+On Ubuntu/Debian:
 
-# Windows with Visual Studio or another multi-config generator
-.\build\Release\telekom_desktop.exe
-```
-
-You can also start the Linux binary from the build directory with `./telekom_desktop`; the application checks both `build/.env` and the project-root `.env`. For a Windows distribution, run Qt's `windeployqt` against the generated `.exe` to copy the required Qt DLLs. To build the original console app as well, omit `-DBUILD_CONSOLE=OFF` after installing its PostgreSQL, OpenSSL, and Boost dependencies.
-
-### Change a subscriber's service plan
-
-Open **Subscribers**, select a subscriber, then choose **Edit selected services** (or double-click their row). The dialog lets an operator set the Internet plan to **1, 2, 4, or 6 Mbit/s** and choose **1–10 IPTV channels**. It also shows the current phone-service status. Save applies the Internet and IPTV changes to PostgreSQL; use **New payment** to activate or renew Internet, IPTV, or phone service.
-
-Each saved plan change is also written as a zero-payment blockchain event. Subscriber expiry dates are stored as PostgreSQL timestamps, and the application automatically migrates older text-based expiry columns at startup.
-
-## 📌 Project Objective
-
-Eliminate the "Single Point of Failure" problem inherent in centralized systems, prevent manipulation of subscriber data, and ensure transaction integrity through **RSA + SHA-256** algorithms.
-
----
-
-## 🛠 Technical Foundation and Architecture
-
-The project is built using modern C++ standards (C++17) with a modular architecture:
-
-* **Backend:** C++ (High performance and resource management).
-* **Database:** PostgreSQL (Persistent storage of subscriber data).
-* **Networking:** Boost.Asio (Asynchronous P2P node communication).
-* **Cryptography:** OpenSSL (SHA-256 and RSA cryptographic protection).
-
-### Core Layers
-1. **Data Layer (Blockchain):** Manages the chain of blocks and the PoW (Proof of Work) mining process.
-2. **Security Layer (Digital Signature):** Verifies transaction authenticity using the RSA algorithm.
-3. **Business Logic Layer (Smart Contract):** Automatically validates payment conditions for Internet, IP-TV, and Phone services.
-4. **Network Layer (P2P Node):** Broadcasts new blocks to other peers on the network in real time.
-
----
-
-## 📂 Project Structure
-
-```text
-Turkmentelekom_Blockchain/
-├── include/              # Header files (.h)
-│   ├── blockchain.h      # Blockchain data structures
-│   ├── database.h        # PostgreSQL Singleton Manager
-│   ├── p2p.h             # Boost.Asio P2P Node
-│   ├── signature.h       # RSA Cryptography
-│   └── smartContract.h   # Smart contract logic
-├── src/                  # Implementation files (.cpp)
-│   ├── blockchain.cpp
-│   ├── database.cpp
-│   ├── p2p.cpp
-│   ├── signature.cpp
-│   ├── smartContract.cpp
-│   └── subscriber_repository.cpp # Subscriber data access
-├── ui/                   # Qt desktop application
-│   ├── main.cpp          # UI entry point and environment discovery
-│   ├── main_window.h     # Main window interface and state
-│   ├── main_window.cpp   # Data loading, refresh, and payment operations
-│   ├── main_window_pages.cpp # UI pages and operator dialogs
-│   └── ui_helpers.*      # Shared styles, table, and display helpers
-├── .env                  # DB settings (DB_NAME, DB_PASS, etc.)
-├── console/main.cpp      # Console/P2P program entry point
-├── Makefile              # Automated build system
-└── README.md             # Documentation
-```
-
----
-
-## 🚀 Installation and Running
-
-### 1. Required Libraries (Dependencies)
-On a Linux (Ubuntu/Debian) system, run:
 ```bash
 sudo apt-get update
-sudo apt-get install libssl-dev libpqxx-dev postgresql libboost-all-dev
+sudo apt-get install cmake g++ libssl-dev libpqxx-dev libboost-system-dev qt6-base-dev
 ```
 
-### 2. Database Setup
-Create the `telekom_db` database in PostgreSQL and enter your password in the `.env` file.
+Qt is required only for the desktop target. The console target requires Boost.System but not Qt.
 
-### 3. Compilation and Execution
+### 3. Build and run the desktop UI
+
 ```bash
-# Clean and build
-make clean && make
-
-# Run the program
-./telekom_system
+cmake -S . -B build -DBUILD_DESKTOP=ON -DBUILD_CONSOLE=OFF
+cmake --build build --config Release
+./build/telekom_desktop
 ```
 
----
+On macOS, launch `./build/telekom_desktop.app/Contents/MacOS/telekom_desktop`. On Windows with a multi-config generator, launch `build\Release\telekom_desktop.exe`; use `windeployqt` when packaging it.
 
-## 📊 Technical Efficiency and Security
+### 4. Build and run the console/P2P prototype
 
-### System Resilience
-The system's resilience against hacking attacks is calculated using probability theory, based on the number of nodes ($n$) and mining difficulty ($d$):
+```bash
+make
+./build-console/telekom_system
+```
 
-$$P = \sum_{k=\lceil n/2 \rceil}^{n} \binom{n}{k} p^k (1-p)^{n-k}$$
+`make` configures CMake with `BUILD_DESKTOP=OFF`, so it works on machines without Qt. To build both targets, omit the options:
 
-*Note: To alter data in the distributed system, an attacker would need to control more than 51% of the network nodes, which is practically infeasible.*
+```bash
+cmake -S . -B build-all
+cmake --build build-all --config Release
+```
 
----
+### 5. Run domain checks
 
-## 👨‍💻 Operator User Guide
-1. **Port Selection:** Enter a local port (e.g., 8080) when the program starts.
-2. **P2P Connection:** To connect to another operator on the network, enter their IP address and port.
-3. **Service Activation:** Enter the subscriber name and payment amount. If the smart contract approves the payment, a new block is created and broadcast across the network.
+```bash
+make test
+```
+
+The checks cover payment rejection/activation/renewal rules, canonical block hashing, tamper detection, and UTF-8 byte handling in the demo signature routine.
+
+## Operator workflow
+
+1. Create the account in **Subscribers**.
+2. Set the Internet speed and IPTV channel count if needed.
+3. Use **New payment** to activate or renew one service. The app shows a validation error rather than writing a block for insufficient or invalid payments.
+4. Open **Blockchain** and run **Integrity audit**. The interface deliberately shows `Not audited` until that check completes.
+
+Each accepted payment creates a 30-day term. If a service is still active, its new term begins at the current expiry rather than discarding remaining days.
+
+## Architecture
+
+```text
+ui/                    Qt Widgets operator interface
+console/main.cpp       Terminal operator and experimental P2P entry point
+src/smartContract.cpp  Service eligibility, renewal, and subscriber persistence
+src/blockchain.cpp     Canonical SHA-256 block hashing, mining, and ledger audit
+src/database.cpp       PostgreSQL connection, schema setup, and legacy migration
+src/p2p.cpp            Newline-framed experimental peer transport
+tests/                 Focused domain behaviour tests
+```
+
+The ledger writer uses a PostgreSQL advisory transaction lock. It reloads the persisted chain tip before mining, preventing two local application processes from committing blocks against the same stale predecessor. Subscriber changes and the block insert share that transaction; the in-memory chain updates only after commit.
+
+New blocks use a length-prefixed, version-2 hash payload that includes index, previous hash, timestamp, data, and nonce. Earlier version-1 records remain readable. Legacy blocks without a persisted nonce receive a link-and-prefix compatibility check; they cannot be fully replayed.
+
+## Security and scope
+
+- SHA-256 hashing uses OpenSSL EVP.
+- The `DigitalSignature` class is a small, demonstrative RSA-style routine used for the console exercise. Its tiny keys, plaintext key files, and absent persisted signatures are **not suitable for real security**. Replace it with OpenSSL EVP signing (for example, Ed25519 or RSA-PSS), protected key storage, and persisted public-key/signature metadata before any production use.
+- The P2P transport now frames TCP messages correctly and shuts down its I/O thread cleanly, but it still trusts sender-supplied public keys and does not replicate subscriber state. Treat it as a lab demo only.
+- A shared PostgreSQL database remains a central dependency; this project does not remove the single point of failure or establish Byzantine-fault-tolerant consensus.
+
+## Database notes
+
+`DatabaseManager::initTables()` creates the schema and only converts old text-based expiry/channel columns when their database type requires it. Fresh schemas constrain balances, Internet plans, and IPTV channel counts. Existing malformed legacy expiry strings are converted to `NULL` rather than preventing startup.
+
+The seed data in `scripts/init-db.sql` uses dates relative to `NOW()` so a newly created database has meaningful active/expiring states. Docker runs that seed script only when its PostgreSQL volume is first initialized.

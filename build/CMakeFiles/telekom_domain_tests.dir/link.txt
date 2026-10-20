@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/telekom_domain_tests.dir/link.d CMakeFiles/telekom_domain_tests.dir/tests/domain_tests.cpp.o -o telekom_domain_tests  libtelekom_core.a /usr/lib/x86_64-linux-gnu/libcrypto.so /usr/lib/x86_64-linux-gnu/libpqxx.so /usr/lib/x86_64-linux-gnu/libpq.so

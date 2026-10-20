@@ -2,6 +2,7 @@
 #include <vector>
 #include <limits>
 #include <string>
+#include <ctime>
 
 #include "blockchain.h"
 #include "signature.h"
@@ -90,7 +91,7 @@ int main() {
                 cout << "\nAbonentiň adyny giriziň: ";
                 getline(cin, subscriberName);
 
-                Subscriber sub(subscriberName);
+                Subscriber sub(subscriberName, false);
                 if (SmartContract::getSubscriberFromDB(subscriberName, sub)) {
                     cout << "[MAGLUMAT]: Abonent tapyldy." << endl;
                     cout << "[MAGLUMAT]: IPTV kanallary: " << sub.iptv.tvCount << endl;
@@ -101,8 +102,12 @@ int main() {
                         cout << "1 we 10 aralygynda san giriziň: ";
                         cin.clear(); cin.ignore(numeric_limits<streamsize>::max(), '\n');
                     }
-                    if (sub.iptv.setTVCount(newCount)) {
-                        SmartContract::updateSubscriberInDB(sub);
+                    const Subscriber before = sub;
+                    if (sub.iptv.setTVCount(newCount) && before.iptv.tvCount != sub.iptv.tvCount) {
+                        const string transactionData = SmartContract::getPlanChangeData(before, sub);
+                        blockchain.AddBlockWithMutation(Block(0, transactionData), [&sub](pqxx::work &transaction) {
+                            SmartContract::updateSubscriberInDB(sub, transaction);
+                        });
                         cout << "[MAGLUMAT]: IPTV kanal sany täzelendi!" << endl;
                     }
                 } else {
@@ -116,7 +121,7 @@ int main() {
                 cout << "\nAbonentiň adyny giriziň: ";
                 getline(cin, subscriberName);
 
-                Subscriber sub(subscriberName);
+                Subscriber sub(subscriberName, false);
                 if (SmartContract::getSubscriberFromDB(subscriberName, sub)) {
                     cout << "[MAGLUMAT]: Abonent tapyldy." << endl;
                     cout << "[MAGLUMAT]: Internet tizligi: " << sub.internet.speed << " Mbit/s" << endl;
@@ -127,8 +132,12 @@ int main() {
                         cout << "1, 2, 4 ýa-da 6 giriziň: ";
                         cin.clear(); cin.ignore(numeric_limits<streamsize>::max(), '\n');
                     }
-                    if (sub.internet.setSpeed(newSpeed)) {
-                        SmartContract::updateSubscriberInDB(sub);
+                    const Subscriber before = sub;
+                    if (sub.internet.setSpeed(newSpeed) && before.internet.speed != sub.internet.speed) {
+                        const string transactionData = SmartContract::getPlanChangeData(before, sub);
+                        blockchain.AddBlockWithMutation(Block(0, transactionData), [&sub](pqxx::work &transaction) {
+                            SmartContract::updateSubscriberInDB(sub, transaction);
+                        });
                         cout << "[MAGLUMAT]: Internet tizligi täzelendi!" << endl;
                     }
                 } else {
@@ -142,16 +151,19 @@ int main() {
                 cout << "\nAbonentiň adyny giriziň: ";
                 getline(cin, subscriberName);
 
-                Subscriber sub(subscriberName);
+                Subscriber sub(subscriberName, false);
                 if (SmartContract::getSubscriberFromDB(subscriberName, sub)) {
                     cout << "[MAGLUMAT]: Abonent tapyldy." << endl;
                     cout << "[MAGLUMAT]: Balans: " << sub.balance << " TMT" << endl;
-                    cout << "[MAGLUMAT]: Internet: " << (sub.internetExpiry != "Inactive" ? "Işjeň. Tizlik " + sub.internet.speed + " Mbit/s. Galan günler: " + to_string(sub.remainingDays(sub.internetExpiry)) : "Işjeň däl") << endl;
-                    cout << "[MAGLUMAT]: IP-TV: " << (sub.iptvExpiry != "Inactive" ? "Işjeň. Galan günler: " + to_string(sub.remainingDays(sub.iptvExpiry)) : "Işjeň däl") << endl;
-                    cout << "[MAGLUMAT]: Telefon: " << (sub.phoneExpiry != "Inactive" ? "Işjeň. Galan günler: " + to_string(sub.remainingDays(sub.phoneExpiry)) : "Işjeň däl") << endl;
+                    cout << "[MAGLUMAT]: Internet: " << (sub.isServiceActive(ServiceType::INTERNET) ? "Işjeň. Tizlik " + sub.internet.speed + " Mbit/s. Galan günler: " + to_string(sub.remainingDays(sub.internetExpiry)) : "Işjeň däl") << endl;
+                    cout << "[MAGLUMAT]: IP-TV: " << (sub.isServiceActive(ServiceType::IPTV) ? "Işjeň. Galan günler: " + to_string(sub.remainingDays(sub.iptvExpiry)) : "Işjeň däl") << endl;
+                    cout << "[MAGLUMAT]: Telefon: " << (sub.isServiceActive(ServiceType::PHONE) ? "Işjeň. Galan günler: " + to_string(sub.remainingDays(sub.phoneExpiry)) : "Işjeň däl") << endl;
                 } else {
-                    SmartContract::updateSubscriberInDB(Subscriber(subscriberName));
-                    cout << "[MAGLUMAT]: Täze abonent hasaba alyndy!" << endl;
+                    if (SmartContract::createSubscriberInDB(Subscriber(subscriberName, false))) {
+                        cout << "[MAGLUMAT]: Täze abonent hasaba alyndy!" << endl;
+                    } else {
+                        cout << "[MAGLUMAT]: Abonent eýýäm bar." << endl;
+                    }
                 }
                 break;
             }
@@ -161,7 +173,11 @@ int main() {
                 cout << "\nAbonentiň adyny giriziň: ";
                 getline(cin, subscriberName);
 
-                Subscriber sub(subscriberName);
+                Subscriber sub(subscriberName, false);
+                if (!SmartContract::getSubscriberFromDB(subscriberName, sub)) {
+                    cout << "[ÝALŇYŞLYK]: Abonent tapylmady. Ilki 2-nji menýudan hasaba alyň." << endl;
+                    break;
+                }
                 cout << "[MAGLUMAT]: Abonentiň balanysy: " << sub.balance << " TMT" << endl;
 
                 int serviceChoice;
@@ -182,31 +198,38 @@ int main() {
                     cin.clear(); cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
 
-                ServiceType serviceType = static_cast<ServiceType>(serviceChoice);
-                string txData = sub.getTransactionData(serviceType, paymentAmount);
+                const ServiceType serviceType = static_cast<ServiceType>(serviceChoice);
+                const Subscriber before = sub;
+                const time_t processedAt = time(nullptr);
+                string validationError;
+                if (!SmartContract::processService(sub, paymentAmount, serviceType, &validationError, processedAt)) {
+                    cout << "[ÝALŇYŞLYK]: " << validationError << endl;
+                    break;
+                }
 
-                RSAKeys keys = DigitalSignature::getKeys("keys_" + sub.name + ".txt");
-                vector<long long> signature = DigitalSignature::encrypt(txData, keys.d, keys.n);
-                string decryptedData = DigitalSignature::decrypt(signature, keys.e, keys.n);
+                const string txData = SmartContract::getPaymentData(before, sub, serviceType, paymentAmount, processedAt);
+                const RSAKeys keys = DigitalSignature::getKeys("keys_" + sub.name + ".txt");
+                const vector<long long> signature = DigitalSignature::encrypt(txData, keys.d, keys.n);
+                const string decryptedData = DigitalSignature::decrypt(signature, keys.e, keys.n);
+                if (decryptedData != txData) {
+                    cout << "[ÝALŇYŞLYK]: Kriptografik barlag şowsuz!" << endl;
+                    break;
+                }
+
+                blockchain.AddBlockWithMutation(Block(0, txData), [&sub](pqxx::work &transaction) {
+                    SmartContract::updateSubscriberInDB(sub, transaction);
+                });
 
                 string sigStr;
                 sigStr.reserve(signature.size() * 6);
-                for (size_t i = 0; i < signature.size(); i++) {
+                for (size_t i = 0; i < signature.size(); ++i) {
                     sigStr += to_string(signature[i]);
-                    if (i < signature.size() - 1) sigStr += ",";
+                    if (i + 1 < signature.size()) sigStr += ",";
                 }
-
-                if (decryptedData == txData) {
-                    cout << "[MAGLUMAT]: RSA GOLY TASSYKLANDY." << endl;
-
-                    SmartContract::processService(sub, paymentAmount, serviceType);
-                    blockchain.AddBlock(Block(blockchain.getLatestBlock().getIndex() + 1, txData));
-                    string p2pMsg = "NEW_BLOCK|" + txData + "|" + sigStr + "|" + to_string(keys.e) + "|" + to_string(keys.n);
-                    myNode.broadcast_message(p2pMsg);
-                    cout << "[ÜSTÜNLIK]: Blok tora ýaýradyldy." << endl;
-                } else {
-                    cout << "[ÝALŇYŞLYK]: Kriptografik barlag şowsuz!" << endl;
-                }
+                cout << "[MAGLUMAT]: RSA GOLY TASSYKLANDY." << endl;
+                const string p2pMsg = "NEW_BLOCK|" + txData + "|" + sigStr + "|" + to_string(keys.e) + "|" + to_string(keys.n);
+                myNode.broadcast_message(p2pMsg);
+                cout << "[ÜSTÜNLIK]: Blok tora ýaýradyldy." << endl;
                 break;
             }
 

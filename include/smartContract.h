@@ -7,9 +7,9 @@
 #include <memory>
 #include <iomanip>
 #include <map>
+#include <ctime>
+#include <utility>
 #include "blockchain.h"
-
-namespace pqxx { class connection; }
 
 // --- Service type enumeration ---
 enum class ServiceType { INTERNET = 1, IPTV = 2, PHONE = 3 };
@@ -79,19 +79,26 @@ struct Subscriber {
     int remainingDays(const std::string &expiry) const;
     bool isServiceActive(ServiceType type) const;
     std::string getServiceName(ServiceType type) const;
-    std::string getTransactionData(ServiceType type, double payment) const;
 };
 
 // --- Smart contract logic ---
 class SmartContract {
 public:
-    static bool processService(Subscriber &subscriber, double payment, ServiceType service);
+    // Applies a validated payment in memory. Persistence is deliberately
+    // separate so callers can combine it atomically with a ledger write.
+    static bool processService(Subscriber &subscriber, double payment, ServiceType service,
+                               std::string *errorOut = nullptr, std::time_t processedAt = std::time(nullptr));
+    static std::string getPaymentData(const Subscriber &before, const Subscriber &after,
+                                      ServiceType service, double payment, std::time_t processedAt);
     static std::string getPlanChangeData(const Subscriber &before, const Subscriber &after);
 
     static void updateSubscriberInDB(const Subscriber &subscriber);
+    static void updateSubscriberInDB(const Subscriber &subscriber, pqxx::work &transaction);
+    static bool createSubscriberInDB(const Subscriber &subscriber);
     static bool getSubscriberFromDB(const std::string &name, Subscriber &subscriber);
     static void fullSystemAudit(const Blockchain &bc);
     static std::string getCurrentTimestamp();
+    static std::string formatTimestamp(std::time_t timestamp);
 };
 
 #endif

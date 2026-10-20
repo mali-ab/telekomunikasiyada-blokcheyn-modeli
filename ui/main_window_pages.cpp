@@ -27,6 +27,7 @@
 #include "subscriber_repository.h"
 
 #include <algorithm>
+#include <stdexcept>
 #include <vector>
 
 QWidget *MainWindow::buildDashboardPage() {
@@ -38,10 +39,9 @@ QWidget *MainWindow::buildDashboardPage() {
     layout->addWidget(pageHeader("Operations overview", "Live data from PostgreSQL and the validated chain", payment));
     auto *cards = new QGridLayout;
     cards->setSpacing(14);
-    QLabel *unused = nullptr;
     cards->addWidget(cardWithValue("—", "Registered subscribers", "From database", &subscriberMetric_), 0, 0);
-    cards->addWidget(cardWithValue("OK", "Database", "PostgreSQL", &unused), 0, 1);
-    cards->addWidget(cardWithValue("—", "Validated blocks", "SHA-256 • RSA verified", &blockMetric_), 0, 2);
+    cards->addWidget(cardWithValue("—", "Database", "PostgreSQL connection", &databaseMetric_), 0, 1);
+    cards->addWidget(cardWithValue("—", "Ledger blocks", "Run audit to validate", &blockMetric_), 0, 2);
     cards->addWidget(cardWithValue("—", "Today's payments", "Confirmed transactions", &paymentsMetric_), 0, 3);
     paymentsDetail_ = label("", "muted");
     layout->addLayout(cards);
@@ -75,7 +75,9 @@ QWidget *MainWindow::subscribers() {
     actionLayout->addWidget(add);
     layout->addWidget(pageHeader("Subscribers", "Manage accounts, balances and active services", actions));
     auto *filter = new QLineEdit;
-    filter->setPlaceholderText("Search by name or balance...");
+    filter->setPlaceholderText("Search subscribers...");
+    filter->setAccessibleName("Search subscribers");
+    filter->setClearButtonEnabled(true);
     layout->addWidget(filter);
     subscriberTable_ = table({"No.", "Subscriber", "Internet", "IPTV", "Phone", "Balance", "Status"});
     connect(filter, &QLineEdit::textChanged, this, [this](const QString &query) {
@@ -107,12 +109,14 @@ QWidget *MainWindow::blockchainPage() {
     bar->setObjectName("card");
     auto *barLayout = new QHBoxLayout(bar);
     barLayout->setContentsMargins(16, 12, 16, 12);
-    barLayout->addWidget(label("●  Chain secure", "successTag"));
+    auditStatus_ = label("●  Audit not run", "tag");
+    barLayout->addWidget(auditStatus_);
     barLayout->addSpacing(8);
     blockCount_ = label("—", "muted");
     barLayout->addWidget(blockCount_);
     barLayout->addStretch();
-    barLayout->addWidget(label("Loaded from database", "muted"));
+    auditDetail_ = label("Run an integrity audit after ledger changes.", "muted");
+    barLayout->addWidget(auditDetail_);
     layout->addWidget(bar);
     blockTable_ = table({"Block", "Timestamp", "Transaction", "Previous hash", "Validation"});
     layout->addWidget(blockTable_, 1);
@@ -123,18 +127,19 @@ QWidget *MainWindow::network() {
     auto *page = new QWidget;
     auto *layout = new QVBoxLayout(page);
     layout->setSpacing(16);
-    auto *connectPeer = new QPushButton("+ Connect node");
+    auto *connectPeer = new QPushButton("Console instructions");
+    connectPeer->setObjectName("secondary");
     connect(connectPeer, &QPushButton::clicked, this, [this] { connectNode(); });
-    layout->addWidget(pageHeader("P2P network", "Use the console app for live peer networking", connectPeer));
+    layout->addWidget(pageHeader("P2P network", "The desktop UI does not start or manage peer nodes", connectPeer));
     auto *cards = new QGridLayout;
     cards->setSpacing(14);
     QLabel *unused = nullptr;
-    cards->addWidget(cardWithValue("—", "Active peers", "Console operator only", &unused), 0, 0);
-    cards->addWidget(cardWithValue("8080", "Default port", "P2P not started in UI", &unused), 0, 1);
-    cards->addWidget(cardWithValue("—", "UI mode", "Database-backed views", &unused), 0, 2);
+    cards->addWidget(cardWithValue("Console", "Network mode", "Start telekom_system", &unused), 0, 0);
+    cards->addWidget(cardWithValue("8080", "Example port", "Choose at console startup", &unused), 0, 1);
+    cards->addWidget(cardWithValue("Local", "Desktop mode", "Database-backed views", &unused), 0, 2);
     layout->addLayout(cards);
     auto *nodes = table({"Node", "Address", "Port", "Last seen", "State"});
-    setTableRows(nodes, {{"—", "—", "—", "—", "Start telekom_system for P2P"}});
+    setTableRows(nodes, {{"—", "—", "—", "—", "Not available in desktop UI"}});
     layout->addWidget(nodes, 1);
     return page;
 }
@@ -143,7 +148,7 @@ QWidget *MainWindow::settings() {
     auto *page = new QWidget;
     auto *layout = new QVBoxLayout(page);
     layout->setSpacing(16);
-    layout->addWidget(pageHeader("System settings", "Local operator and network preferences"));
+    layout->addWidget(pageHeader("System settings", "Read-only reference values for the console prototype"));
     auto *card = new QFrame;
     card->setObjectName("card");
     auto *form = new QFormLayout(card);
@@ -154,11 +159,14 @@ QWidget *MainWindow::settings() {
     port->setValidator(new QIntValidator(1, 65535, port));
     auto *difficulty = new QComboBox;
     difficulty->addItems({"3 — Standard", "4 — High", "5 — Maximum"});
+    operatorName->setEnabled(false);
+    port->setEnabled(false);
+    difficulty->setEnabled(false);
     form->addRow("Operator name", operatorName);
     form->addRow("P2P port", port);
     form->addRow("Mining difficulty", difficulty);
-    auto *save = new QPushButton("Save settings");
-    connect(save, &QPushButton::clicked, this, [this] { showToast("Settings saved locally."); });
+    auto *save = new QPushButton("Console-only settings");
+    save->setEnabled(false);
     form->addRow("", save);
     layout->addWidget(card);
     layout->addStretch();
@@ -172,7 +180,7 @@ void MainWindow::build() {
     horizontal->setSpacing(0);
     auto *sidebar = new QFrame;
     sidebar->setObjectName("sidebar");
-    sidebar->setFixedWidth(242);
+    sidebar->setFixedWidth(230);
     auto *nav = new QVBoxLayout(sidebar);
     nav->setContentsMargins(18, 26, 18, 20);
     nav->setSpacing(5);
@@ -199,6 +207,7 @@ void MainWindow::build() {
     nav->addWidget(label("v1.0.0 • Operator console", "brandSub"));
     horizontal->addWidget(sidebar);
     auto *content = new QWidget;
+    content->setObjectName("content");
     auto *contentLayout = new QVBoxLayout(content);
     contentLayout->setContentsMargins(34, 28, 34, 18);
     contentLayout->addWidget(pages_);
@@ -223,6 +232,7 @@ void MainWindow::paymentDialog() {
         for (const auto &name : SubscriberRepository::names()) subscriber.addItem(QString::fromStdString(name));
     } catch (...) {}
     subscriber.lineEdit()->setPlaceholderText("Subscriber name");
+    subscriber.setAccessibleName("Existing subscriber");
     subscriber.lineEdit()->setValidator(new QRegularExpressionValidator(QRegularExpression("^[\\p{L}][\\p{L}\\p{N} .'-]{0,79}$"), &subscriber));
     QComboBox service;
     service.addItems({"Internet", "IPTV", "Phone"});
@@ -231,6 +241,9 @@ void MainWindow::paymentDialog() {
     form->addRow("Subscriber", &subscriber);
     form->addRow("Service", &service);
     form->addRow("Amount (TMT)", &amount);
+    auto *paymentHint = label("Payments are accepted only for existing subscriber accounts.", "muted");
+    paymentHint->setWordWrap(true);
+    form->addRow(paymentHint);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
     buttons->button(QDialogButtonBox::Ok)->setText("Validate & create block");
     form->addRow(buttons);
@@ -262,18 +275,31 @@ void MainWindow::addSubscriber() {
     auto *form = new QFormLayout(&dialog);
     form->setContentsMargins(24, 20, 24, 20);
     QLineEdit name;
+    name.setAccessibleName("Subscriber full name");
     name.setValidator(new QRegularExpressionValidator(QRegularExpression("^[\\p{L}][\\p{L}\\p{N} .'-]{0,79}$"), &name));
     form->addRow("Full name", &name);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
     buttons->button(QDialogButtonBox::Ok)->setText("Create account");
     form->addRow(buttons);
+    name.setFocus();
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
     connect(buttons, &QDialogButtonBox::accepted, &dialog, [&] {
-        if (name.text().trimmed().isEmpty()) return;
-        SmartContract::updateSubscriberInDB(Subscriber(name.text().trimmed().toStdString(), false));
-        dialog.accept();
-        refreshAll();
-        showToast("Subscriber account created.");
+        const QString trimmedName = name.text().trimmed();
+        if (trimmedName.isEmpty()) {
+            QMessageBox::warning(&dialog, "Add subscriber", "Enter the subscriber's full name.");
+            return;
+        }
+        try {
+            if (!SmartContract::createSubscriberInDB(Subscriber(trimmedName.toStdString(), false))) {
+                QMessageBox::information(&dialog, "Add subscriber", "A subscriber with that name already exists. Existing account data was not changed.");
+                return;
+            }
+            dialog.accept();
+            refreshAll();
+            showToast("Subscriber account created.");
+        } catch (const std::exception &e) {
+            QMessageBox::critical(&dialog, "Add subscriber", QString("Could not create the account:\n%1").arg(e.what()));
+        }
     });
     dialog.exec();
 }
@@ -326,10 +352,20 @@ void MainWindow::editSubscriberServices(const QString &subscriberName) {
             QMessageBox::warning(&dialog, "Service settings", "Choose a supported Internet speed and 1–10 IPTV channels.");
             return;
         }
-        SmartContract::updateSubscriberInDB(subscriber);
-        if (blockchain_) {
+        if (previous.internet.speed == subscriber.internet.speed && previous.iptv.tvCount == subscriber.iptv.tvCount) {
+            dialog.accept();
+            showToast("No service changes to save.");
+            return;
+        }
+        try {
+            if (!blockchain_) throw std::runtime_error("Blockchain is not available.");
             const std::string transactionData = SmartContract::getPlanChangeData(previous, subscriber);
-            blockchain_->AddBlock(Block(blockchain_->getLatestBlock().getIndex() + 1, transactionData));
+            blockchain_->AddBlockWithMutation(Block(0, transactionData), [&subscriber](pqxx::work &transaction) {
+                SmartContract::updateSubscriberInDB(subscriber, transaction);
+            });
+        } catch (const std::exception &e) {
+            QMessageBox::critical(&dialog, "Service settings", QString("Could not save the service changes:\n%1").arg(e.what()));
+            return;
         }
         dialog.accept();
         refreshAll();
@@ -340,10 +376,10 @@ void MainWindow::editSubscriberServices(const QString &subscriberName) {
 
 void MainWindow::connectNode() {
     QDialog dialog(this);
-    dialog.setWindowTitle("Connect peer node");
+    dialog.setWindowTitle("P2P console instructions");
     auto *form = new QFormLayout(&dialog);
     form->setContentsMargins(24, 20, 24, 20);
-    auto *hint = new QLabel("Peer connections are available in the telekom_system console app.");
+    auto *hint = new QLabel("The desktop UI does not run P2P. Build the console target, run telekom_system, then enter a local port and optional peer address at startup. This prototype is intended for demonstrations, not production networking.");
     hint->setWordWrap(true);
     form->addRow(hint);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close);
