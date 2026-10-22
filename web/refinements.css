@@ -1,0 +1,74 @@
+body {
+  background: radial-gradient(circle at 84% 0, rgba(51, 146, 225, 0.08), transparent 28rem), var(--bg);
+  font-size: 15px;
+}
+
+.app-shell { grid-template-columns: 260px 1fr; }
+.sidebar { width: 260px; padding: 30px 20px 24px; box-shadow: 16px 0 50px rgba(2, 16, 34, 0.08); }
+.brand { padding-bottom: 38px; }
+.brand strong { font-size: 18px; }
+.brand-mark { width: 36px; height: 36px; border-radius: 11px; }
+.nav-item { padding: 13px 14px; border-radius: 11px; }
+.nav-item.active::before { left: -20px; }
+.connection.offline i { background: #ef6a73; box-shadow: 0 0 0 4px rgba(239, 106, 115, 0.14); }
+
+main { grid-column: 2; }
+.topbar { height: 76px; padding-inline: 38px; }
+.content { padding: 38px 40px 56px; max-width: 1680px; }
+.page-heading { margin-bottom: 30px; }
+.page-heading h1 { font-size: 34px; letter-spacing: -1.2px; }
+.page-heading p { font-size: 13px; }
+.eyebrow { font-size: 10px; }
+.primary, .secondary { min-height: 42px; border-radius: 10px; padding: 10px 17px; }
+.primary:disabled, .secondary:disabled, .quick-card > button:disabled { opacity: 0.48; cursor: not-allowed; box-shadow: none; }
+
+.metrics { gap: 18px; margin-bottom: 22px; }
+.metric { min-height: 164px; border-radius: 16px; padding: 22px; box-shadow: 0 10px 35px rgba(22, 45, 75, 0.055); transition: transform 0.18s ease, box-shadow 0.18s ease; }
+.metric:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(22, 45, 75, 0.09); }
+.metric-icon { width: 40px; height: 40px; border-radius: 11px; }
+.metric > strong { font-size: 27px; }
+.metric > span:not(.trend) { font-size: 12px; }
+.metric > small { font-size: 10px; }
+
+.panel { border-radius: 16px; box-shadow: 0 10px 35px rgba(22, 45, 75, 0.055); }
+.panel-heading { padding: 21px 22px 17px; }
+.panel-heading h2, .settings-card h2 { font-size: 16px; }
+.panel-heading p { font-size: 11px; }
+th { font-size: 10px; padding: 12px 20px; }
+td { font-size: 12px; padding: 15px 20px; }
+td strong { font-size: 12px; }
+.mini-avatar { width: 32px; height: 32px; font-size: 10px; }
+.service-badge, .status-badge { font-size: 10px; padding: 5px 9px; }
+.health-row { font-size: 11px; padding: 15px 0; }
+.health-row b, .health-row em { font-size: 10px; }
+.health-row em.offline { color: #b33b46; background: #feecef; }
+.all-good { font-size: 9px; }
+.quick-card > button { padding: 15px 22px; }
+.quick-card > button b { font-size: 12px; }
+.quick-card > button small { font-size: 10px; }
+.quick-icon { width: 34px; height: 34px; }
+.audit-strip { border-radius: 13px; padding: 14px 18px; font-size: 11px; }
+
+.empty-row td { text-align: center; padding: 42px 20px !important; color: #6d7e94; }
+.empty-row span { display: block; color: #31445d; font-size: 13px; font-weight: 750; }
+.empty-row small { display: block; margin-top: 4px; color: #8b99aa; font-size: 11px; }
+.modal { border-radius: 18px; }
+.modal form { padding: 30px; }
+.modal h2 { font-size: 24px; }
+.toast { font-size: 12px; padding: 14px 20px; border-radius: 11px; }
+
+@media (max-width: 1100px) {
+  .sidebar { width: 228px; }
+  .app-shell { grid-template-columns: 228px 1fr; }
+  .content { padding-inline: 28px; }
+}
+
+@media (max-width: 760px) {
+  .sidebar { width: 260px; }
+  .sidebar.open::after { left: 260px; }
+  .topbar { padding-inline: 18px; }
+  .content { padding: 26px 16px 44px; }
+  .page-heading h1 { font-size: 29px; }
+  .metric { min-height: 148px; }
+  .dashboard-grid { gap: 14px; }
+}

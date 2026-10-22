@@ -6,7 +6,7 @@ let apiAvailable = false;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-const initials = (name) => name.split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase();
+const initials = (name = "") => String(name).trim().split(/\s+/).filter(Boolean).map((part) => part[0]).slice(0, 2).join("").toUpperCase() || "—";
 const number = new Intl.NumberFormat("en-US");
 const money = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 const escapeHtml = (value) => String(value ?? "—").replace(/[&<>"']/g, (character) => ({
@@ -38,10 +38,20 @@ function transactionRow(block) {
   return `<tr><td><div class="person"><span class="mini-avatar">${escapeHtml(initials(block.subscriber))}</span><strong>${escapeHtml(block.subscriber)}</strong></div></td><td><span class="service-badge">${escapeHtml(block.service)}</span></td><td><strong>${money.format(Number(block.amount) || 0)} TMT</strong></td><td><span class="block-link">#${number.format(Number(block.index) || 0)}</span></td><td><span class="status-badge">✓ Confirmed</span></td></tr>`;
 }
 
+function emptyRow(columns, title, detail) {
+  return `<tr class="empty-row"><td colspan="${columns}"><span>${escapeHtml(title)}</span><small>${escapeHtml(detail)}</small></td></tr>`;
+}
+
+function setApiAvailability(available) {
+  $$('[data-requires-api], #runAudit').forEach((element) => { element.disabled = !available; });
+  $("#connectionState").classList.toggle("offline", !available);
+}
+
 function render() {
-  $("#recentRows").innerHTML = blocks.slice(0, 5).map(transactionRow).join("");
-  $("#subscriberRows").innerHTML = subscribers.map((subscriber, index) => `<tr><td>${index + 1}</td><td><div class="person"><span class="mini-avatar">${escapeHtml(initials(subscriber.name))}</span><strong>${escapeHtml(subscriber.name)}</strong></div></td><td>${escapeHtml(subscriber.internet)}</td><td>${escapeHtml(subscriber.iptv)}</td><td>${escapeHtml(subscriber.phone)}</td><td><strong>${money.format(Number(subscriber.balance) || 0)} TMT</strong></td><td><span class="status-badge">${escapeHtml(subscriber.status)}</span></td></tr>`).join("");
-  $("#blockRows").innerHTML = blocks.map((block) => `<tr><td><span class="block-link">#${number.format(Number(block.index) || 0)}</span></td><td>${escapeHtml(block.time)}</td><td><strong>${escapeHtml(block.subscriber)}</strong> • ${escapeHtml(block.service)} • ${money.format(Number(block.amount) || 0)} TMT</td><td><code title="${escapeHtml(block.hash)}">${escapeHtml(block.hash)}</code></td><td><span class="status-badge audit-result">Not audited</span></td></tr>`).join("");
+  const unavailableDetail = apiAvailable ? "New activity will appear here." : "Connect the backend API to load records.";
+  $("#recentRows").innerHTML = blocks.length ? blocks.slice(0, 5).map(transactionRow).join("") : emptyRow(5, "No transactions", unavailableDetail);
+  $("#subscriberRows").innerHTML = subscribers.length ? subscribers.map((subscriber, index) => `<tr><td>${index + 1}</td><td><div class="person"><span class="mini-avatar">${escapeHtml(initials(subscriber.name))}</span><strong>${escapeHtml(subscriber.name)}</strong></div></td><td>${escapeHtml(subscriber.internet)}</td><td>${escapeHtml(subscriber.iptv)}</td><td>${escapeHtml(subscriber.phone)}</td><td><strong>${money.format(Number(subscriber.balance) || 0)} TMT</strong></td><td><span class="status-badge">${escapeHtml(subscriber.status)}</span></td></tr>`).join("") : emptyRow(7, "No subscribers", unavailableDetail);
+  $("#blockRows").innerHTML = blocks.length ? blocks.map((block) => `<tr><td><span class="block-link">#${number.format(Number(block.index) || 0)}</span></td><td>${escapeHtml(block.time)}</td><td><strong>${escapeHtml(block.subscriber)}</strong> • ${escapeHtml(block.service)} • ${money.format(Number(block.amount) || 0)} TMT</td><td><code title="${escapeHtml(block.hash)}">${escapeHtml(block.hash)}</code></td><td><span class="status-badge audit-result">Not audited</span></td></tr>`).join("") : emptyRow(5, "No ledger blocks", unavailableDetail);
   $("#paymentSubscriber").replaceChildren(...subscribers.map((subscriber) => new Option(subscriber.name, subscriber.name)));
 
   if (!apiAvailable) {
@@ -74,6 +84,9 @@ let toastTimer;
 function toast(message, error = false) { const el = $("#toast"); el.textContent = message; el.className = `toast show${error ? " error" : ""}`; clearTimeout(toastTimer); toastTimer = setTimeout(() => el.className = "toast", 3500); }
 
 async function loadBackend() {
+  setApiAvailability(false);
+  $("#connectionState b").textContent = "Connecting";
+  $("#connectionState small").textContent = "Checking backend API";
   try {
     const [dashboard, subscriberData, blockData] = await Promise.all([api.dashboard(), api.subscribers(), api.blocks()]);
     if (Array.isArray(subscriberData)) subscribers = subscriberData;
@@ -86,6 +99,7 @@ async function loadBackend() {
     setText("#databaseDetail", "PostgreSQL connection established");
     setText("#healthSummary", "All core services available");
     $$('[data-health]').forEach((element) => { element.textContent = "Operational"; element.classList.remove("offline"); });
+    setApiAvailability(true);
     render();
   } catch {
     apiAvailable = false;
@@ -98,6 +112,7 @@ async function loadBackend() {
     setText("#databaseDetail", "Start telekom_web to use live data");
     setText("#healthSummary", "Backend services unavailable");
     $$('[data-health]').forEach((element) => { element.textContent = "Unavailable"; element.classList.add("offline"); });
+    setApiAvailability(false);
     render();
   }
 }

@@ -10,6 +10,7 @@
     />
     <title>TürkmenTelekom • Blockchain Operator</title>
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./refinements.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -81,7 +82,7 @@
                 <h1>Good morning, Operator</h1>
                 <p>Here’s what’s happening across your network today.</p>
               </div>
-              <button class="primary" data-open="paymentModal">
+              <button class="primary" data-open="paymentModal" data-requires-api>
                 <span>+</span> New payment
               </button>
             </div>
@@ -178,13 +179,13 @@
                       <p>Common operator tasks</p>
                     </div>
                   </div>
-                  <button data-open="subscriberModal">
+                  <button data-open="subscriberModal" data-requires-api>
                     <span class="quick-icon">⊕</span
                     ><span
                       ><b>Add subscriber</b
                       ><small>Create a new customer account</small></span
                     ><i>›</i></button
-                  ><button data-open="paymentModal">
+                  ><button data-open="paymentModal" data-requires-api>
                     <span class="quick-icon">₼</span
                     ><span
                       ><b>Process payment</b
@@ -209,7 +210,7 @@
                 <h1>Subscribers</h1>
                 <p>Manage accounts, balances and active services.</p>
               </div>
-              <button class="primary" data-open="subscriberModal">
+              <button class="primary" data-open="subscriberModal" data-requires-api>
                 <span>+</span> Add subscriber
               </button>
             </div>
