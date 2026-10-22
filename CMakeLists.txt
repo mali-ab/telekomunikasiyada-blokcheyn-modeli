@@ -8,9 +8,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(BUILD_DESKTOP "Build the Qt desktop operator interface" ON)
 option(BUILD_CONSOLE "Build the terminal operator and P2P prototype" ON)
+option(BUILD_WEB_API "Build the browser UI and HTTP API server" ON)
 
-if (NOT BUILD_DESKTOP AND NOT BUILD_CONSOLE)
-    message(FATAL_ERROR "Enable BUILD_DESKTOP, BUILD_CONSOLE, or both.")
+if (NOT BUILD_DESKTOP AND NOT BUILD_CONSOLE AND NOT BUILD_WEB_API)
+    message(FATAL_ERROR "Enable BUILD_DESKTOP, BUILD_CONSOLE, BUILD_WEB_API, or a combination of them.")
 endif()
 
 find_package(OpenSSL REQUIRED)
@@ -79,15 +80,23 @@ if (BUILD_DESKTOP)
     set_target_properties(telekom_desktop PROPERTIES WIN32_EXECUTABLE TRUE MACOSX_BUNDLE TRUE)
 endif()
 
-if (BUILD_CONSOLE)
+if (BUILD_CONSOLE OR BUILD_WEB_API)
     find_package(Boost REQUIRED COMPONENTS system)
     find_package(Threads REQUIRED)
+endif()
 
+if (BUILD_CONSOLE)
     add_executable(telekom_system
         console/main.cpp
         src/p2p.cpp
     )
     target_link_libraries(telekom_system PRIVATE telekom_core Boost::system Threads::Threads)
+endif()
+
+if (BUILD_WEB_API)
+    add_executable(telekom_web web/server.cpp)
+    target_link_libraries(telekom_web PRIVATE telekom_core Boost::system Threads::Threads)
+    target_compile_definitions(telekom_web PRIVATE TELEKOM_WEB_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/web")
 endif()
 
 include(CTest)

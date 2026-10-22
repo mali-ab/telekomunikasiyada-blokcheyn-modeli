@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cstdlib>
 #include <stdexcept>
 
 namespace {
@@ -60,16 +61,20 @@ std::map<std::string, std::string> DatabaseManager::loadEnv() {
         if (file.is_open()) break;
         file.clear();
     }
-    if (!file.is_open()) return env;
-
-    std::string line;
-    while (std::getline(file, line)) {
-        line = trim(line);
-        if (line.empty() || line.front() == '#') continue;
-        const size_t position = line.find('=');
-        if (position != std::string::npos) {
-            env[trim(line.substr(0, position))] = trim(line.substr(position + 1));
+    if (file.is_open()) {
+        std::string line;
+        while (std::getline(file, line)) {
+            line = trim(line);
+            if (line.empty() || line.front() == '#') continue;
+            const size_t position = line.find('=');
+            if (position != std::string::npos) {
+                env[trim(line.substr(0, position))] = trim(line.substr(position + 1));
+            }
         }
+    }
+
+    for (const char *key : {"DB_NAME", "DB_USER", "DB_PASS", "DB_HOST", "DB_PORT"}) {
+        if (const char *value = std::getenv(key); value && *value) env[key] = value;
     }
     return env;
 }

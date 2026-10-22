@@ -1,0 +1,9 @@
+.git
+.kilo
+.env
+.windows-*
+build*
+dist
+keys*.txt
+aqtinstall.log
+

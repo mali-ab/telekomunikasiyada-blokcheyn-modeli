@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07172c" />
+    <meta
+      name="description"
+      content="TürkmenTelekom blockchain operator console"
+    />
+    <title>TürkmenTelekom • Blockchain Operator</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <div>
+            <strong>Türkmen<span>Telekom</span></strong
+            ><small>BLOCKCHAIN OPERATOR</small>
+          </div>
+        </div>
+        <nav aria-label="Main navigation">
+          <button class="nav-item active" data-page="overview">
+            <span class="icon">▦</span>Overview
+          </button>
+          <button class="nav-item" data-page="subscribers">
+            <span class="icon">◉</span>Subscribers
+          </button>
+          <button class="nav-item" data-page="blockchain">
+            <span class="icon">◇</span>Blockchain
+          </button>
+          <button class="nav-item" data-page="network">
+            <span class="icon">⌘</span>P2P network
+          </button>
+          <button class="nav-item" data-page="settings">
+            <span class="icon">⚙</span>Settings
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="connection" id="connectionState">
+            <i></i><span><b>Connecting</b><small>Waiting for API</small></span>
+          </div>
+          <small>v1.0.0 • Operator console</small>
+        </div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <button
+            class="mobile-menu"
+            id="mobileMenu"
+            aria-label="Open navigation"
+          >
+            ☰
+          </button>
+          <div class="crumb">
+            <span>Console</span><b>/</b
+            ><strong id="currentPage">Overview</strong>
+          </div>
+          <div class="operator">
+            <button class="notification" aria-label="Notifications">
+              <span>•</span>♢
+            </button>
+            <div class="avatar">AO</div>
+            <div>
+              <strong>Ashgabat Operator</strong
+              ><small>System administrator</small>
+            </div>
+          </div>
+        </header>
+
+        <div class="content">
+          <section class="page active" id="overview">
+            <div class="page-heading">
+              <div>
+                <span class="eyebrow">OPERATIONS CENTER</span>
+                <h1>Good morning, Operator</h1>
+                <p>Here’s what’s happening across your network today.</p>
+              </div>
+              <button class="primary" data-open="paymentModal">
+                <span>+</span> New payment
+              </button>
+            </div>
+            <div class="metrics" aria-live="polite">
+              <article class="metric">
+                <div class="metric-icon blue">☷</div>
+                <div class="trend neutral">Live data</div>
+                <strong data-metric="subscribers">—</strong
+                ><span>Registered subscribers</span
+                ><small id="subscriberDetail"
+                  >Loading subscriber records…</small
+                >
+              </article>
+              <article class="metric">
+                <div class="metric-icon green">✓</div>
+                <div class="trend live">
+                  <i></i> <span id="databaseBadge">Checking</span>
+                </div>
+                <strong data-metric="database">—</strong
+                ><span>Database status</span
+                ><small id="databaseDetail">Connecting to the API…</small>
+              </article>
+              <article class="metric">
+                <div class="metric-icon violet">◇</div>
+                <div class="trend neutral">Live data</div>
+                <strong data-metric="blocks">—</strong><span>Ledger blocks</span
+                ><small id="blockDetail">Loading the validated chain…</small>
+              </article>
+              <article class="metric">
+                <div class="metric-icon orange">T</div>
+                <div class="trend neutral">Today</div>
+                <strong data-metric="payments">—</strong
+                ><span>Today’s payments</span
+                ><small id="paymentDetail"
+                  >Loading confirmed transactions…</small
+                >
+              </article>
+            </div>
+            <div class="dashboard-grid">
+              <article class="panel transactions-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h2>Recent transactions</h2>
+                    <p>Latest confirmed activity on the ledger</p>
+                  </div>
+                  <button class="link-button" data-go="blockchain">
+                    View all <span>→</span>
+                  </button>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Subscriber</th>
+                        <th>Service</th>
+                        <th>Amount</th>
+                        <th>Block</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recentRows"></tbody>
+                  </table>
+                </div>
+              </article>
+              <aside class="side-stack">
+                <article class="panel health-card">
+                  <div class="panel-heading">
+                    <div>
+                      <h2>System health</h2>
+                      <p>Current service status</p>
+                    </div>
+                    <span class="all-good" id="healthSummary"
+                      ><i></i> Checking services</span
+                    >
+                  </div>
+                  <div class="health-row">
+                    <span><i class="health-icon">◎</i> PostgreSQL database</span
+                    ><b>Primary</b><em data-health="database">Checking</em>
+                  </div>
+                  <div class="health-row">
+                    <span><i class="health-icon">◇</i> Blockchain ledger</span
+                    ><b id="ledgerHealthValue">— blocks</b
+                    ><em data-health="ledger">Checking</em>
+                  </div>
+                  <div class="health-row">
+                    <span><i class="health-icon">⇄</i> API gateway</span
+                    ><b>Same origin</b><em data-health="api">Checking</em>
+                  </div>
+                </article>
+                <article class="panel quick-card">
+                  <div class="panel-heading">
+                    <div>
+                      <h2>Quick actions</h2>
+                      <p>Common operator tasks</p>
+                    </div>
+                  </div>
+                  <button data-open="subscriberModal">
+                    <span class="quick-icon">⊕</span
+                    ><span
+                      ><b>Add subscriber</b
+                      ><small>Create a new customer account</small></span
+                    ><i>›</i></button
+                  ><button data-open="paymentModal">
+                    <span class="quick-icon">₼</span
+                    ><span
+                      ><b>Process payment</b
+                      ><small>Activate or renew a service</small></span
+                    ><i>›</i></button
+                  ><button data-go="blockchain">
+                    <span class="quick-icon">✓</span
+                    ><span
+                      ><b>Run integrity audit</b
+                      ><small>Verify the complete chain</small></span
+                    ><i>›</i>
+                  </button>
+                </article>
+              </aside>
+            </div>
+          </section>
+
+          <section class="page" id="subscribers">
+            <div class="page-heading">
+              <div>
+                <span class="eyebrow">CUSTOMER MANAGEMENT</span>
+                <h1>Subscribers</h1>
+                <p>Manage accounts, balances and active services.</p>
+              </div>
+              <button class="primary" data-open="subscriberModal">
+                <span>+</span> Add subscriber
+              </button>
+            </div>
+            <article class="panel data-panel">
+              <div class="toolbar">
+                <label class="search"
+                  ><span>⌕</span
+                  ><input
+                    id="subscriberSearch"
+                    type="search"
+                    placeholder="Search subscribers…" /></label
+                ><button class="secondary" id="refreshSubscribers">
+                  ↻ Refresh
+                </button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>No.</th>
+                      <th>Subscriber</th>
+                      <th>Internet</th>
+                      <th>IPTV</th>
+                      <th>Phone</th>
+                      <th>Balance</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="subscriberRows"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="page" id="blockchain">
+            <div class="page-heading">
+              <div>
+                <span class="eyebrow">DISTRIBUTED LEDGER</span>
+                <h1>Blockchain ledger</h1>
+                <p>Immutable record of validated service transactions.</p>
+              </div>
+              <button class="secondary audit-button" id="runAudit">
+                ✓ Run integrity audit
+              </button>
+            </div>
+            <div class="audit-strip">
+              <span class="audit-state"
+                ><i></i><b id="auditLabel">Audit not run</b></span
+              ><span id="blockCount">— blocks • SHA-256 proof of work</span
+              ><small id="auditDetail"
+                >Run an integrity audit after ledger changes.</small
+              >
+            </div>
+            <article class="panel data-panel">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Block</th>
+                      <th>Timestamp</th>
+                      <th>Transaction</th>
+                      <th>Previous hash</th>
+                      <th>Validation</th>
+                    </tr>
+                  </thead>
+                  <tbody id="blockRows"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="page" id="network">
+            <div class="page-heading">
+              <div>
+                <span class="eyebrow">NODE STATUS</span>
+                <h1>P2P network</h1>
+                <p>Monitor peer connectivity for the blockchain network.</p>
+              </div>
+              <button class="secondary" id="nodeInfo">
+                Console instructions
+              </button>
+            </div>
+            <div class="metrics compact">
+              <article class="metric">
+                <div class="metric-icon blue">⌘</div>
+                <strong>Console</strong><span>Network mode</span
+                ><small>Start telekom_system</small>
+              </article>
+              <article class="metric">
+                <div class="metric-icon violet">#</div>
+                <strong>8080</strong><span>Example port</span
+                ><small>Choose at console startup</small>
+              </article>
+              <article class="metric">
+                <div class="metric-icon green">◎</div>
+                <strong>Local</strong><span>Web mode</span
+                ><small>Database-backed views</small>
+              </article>
+            </div>
+            <article class="empty-state">
+              <div>⌘</div>
+              <h2>No peers connected</h2>
+              <p>
+                Peer networking is managed by the
+                <code>telekom_system</code> console application.
+              </p>
+            </article>
+          </section>
+
+          <section class="page" id="settings">
+            <div class="page-heading">
+              <div>
+                <span class="eyebrow">CONFIGURATION</span>
+                <h1>System settings</h1>
+                <p>Reference values for this operator environment.</p>
+              </div>
+            </div>
+            <article class="panel settings-card">
+              <div>
+                <h2>Operator profile</h2>
+                <p>These values are supplied by the backend configuration.</p>
+              </div>
+              <label
+                >Operator name<input
+                  value="Ashgabat Central Operator"
+                  disabled /></label
+              ><label>P2P port<input value="8080" disabled /></label
+              ><label
+                >Mining difficulty<select disabled>
+                  <option>3 — Standard</option>
+                </select></label
+              ><button class="primary" disabled>Console-only settings</button>
+            </article>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <dialog id="paymentModal" class="modal">
+      <form id="paymentForm">
+        <div class="modal-head">
+          <div>
+            <span class="eyebrow">NEW TRANSACTION</span>
+            <h2>Process payment</h2>
+          </div>
+          <button type="button" class="close" data-close aria-label="Close">
+            ×
+          </button>
+        </div>
+        <p>Validate a payment and create a new ledger block.</p>
+        <label
+          >Subscriber<select
+            name="subscriber"
+            id="paymentSubscriber"
+            required
+          ></select
+        ></label>
+        <div class="form-grid">
+          <label
+            >Service<select name="service">
+              <option>Internet</option>
+              <option>IPTV</option>
+              <option>Phone</option>
+            </select></label
+          ><label
+            >Amount (TMT)<input
+              name="amount"
+              type="number"
+              min="0.01"
+              step="0.01"
+              value="280"
+              required
+          /></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="secondary" data-close>Cancel</button
+          ><button class="primary" type="submit">
+            Validate & create block
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="subscriberModal" class="modal">
+      <form id="subscriberForm">
+        <div class="modal-head">
+          <div>
+            <span class="eyebrow">NEW CUSTOMER</span>
+            <h2>Add subscriber</h2>
+          </div>
+          <button type="button" class="close" data-close aria-label="Close">
+            ×
+          </button>
+        </div>
+        <p>Create an account before activating services.</p>
+        <label
+          >Full name<input
+            name="name"
+            maxlength="80"
+            autocomplete="name"
+            placeholder="Subscriber full name"
+            required
+        /></label>
+        <div class="modal-actions">
+          <button type="button" class="secondary" data-close>Cancel</button
+          ><button class="primary" type="submit">Create account</button>
+        </div>
+      </form>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

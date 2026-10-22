@@ -15,20 +15,48 @@ This is an educational model, not a production distributed ledger or telecom bil
 
 The desktop P2P and Settings pages are intentionally informational: peer networking and its runtime settings are available only in `telekom_system`.
 
+The browser interface is served by `telekom_web`. Its `/api` routes call the same
+PostgreSQL repositories, smart-contract validation, and blockchain implementation
+as the desktop application.
+
 ## Quick start
 
-### 1. Start PostgreSQL
+### Docker installation (recommended for the web UI)
 
-The supplied Compose configuration and `.env.example` use the same local values. Copy it before running an app:
+Install Docker Engine with the Docker Compose v2 plugin, then run:
 
 ```bash
 cp .env.example .env
-docker compose up -d
+docker compose up --build -d
 ```
 
-PostgreSQL is exposed on host port `5434`. Change both `.env` and `docker-compose.yml` if you need different local credentials or a different port.
+Open `http://localhost:8080`. Nginx serves the browser UI and proxies `/api` to
+the C++ service; PostgreSQL is exposed on `localhost:5434` for local development.
+Change `WEB_PORT` or `DB_PORT` in `.env` if either port is already in use.
 
-### 2. Install build dependencies
+Useful commands:
+
+```bash
+docker compose logs -f
+docker compose down
+docker compose down -v  # also removes the PostgreSQL data volume
+```
+
+The first startup creates an empty database. Add subscribers through the web UI;
+the project does not install sample customer or ledger records.
+
+### Local installation
+
+#### 1. Start PostgreSQL only
+
+```bash
+cp .env.example .env
+docker compose up -d postgres
+```
+
+PostgreSQL is exposed on host port `5434` by default.
+
+#### 2. Install build dependencies
 
 On Ubuntu/Debian:
 
@@ -39,7 +67,7 @@ sudo apt-get install cmake g++ libssl-dev libpqxx-dev libboost-system-dev qt6-ba
 
 Qt is required only for the desktop target. The console target requires Boost.System but not Qt.
 
-### 3. Build and run the desktop UI
+#### 3. Build and run the desktop UI
 
 ```bash
 cmake -S . -B build -DBUILD_DESKTOP=ON -DBUILD_CONSOLE=OFF
@@ -49,12 +77,23 @@ cmake --build build --config Release
 
 On macOS, launch `./build/telekom_desktop.app/Contents/MacOS/telekom_desktop`. On Windows with a multi-config generator, launch `build\Release\telekom_desktop.exe`; use `windeployqt` when packaging it.
 
-### 4. Build and run the console/P2P prototype
+#### 4. Build and run the console/P2P prototype
 
 ```bash
 make
 ./build-console/telekom_system
 ```
+
+#### 5. Build and run the web interface without Nginx
+
+```bash
+cmake -S . -B build-web -DBUILD_DESKTOP=OFF -DBUILD_CONSOLE=OFF -DBUILD_WEB_API=ON
+cmake --build build-web --config Release
+./build-web/telekom_web
+```
+
+Open `http://localhost:8081`. The web server serves the UI and its database-backed
+API from the same origin. See `web/README.md` for the endpoint contract.
 
 `make` configures CMake with `BUILD_DESKTOP=OFF`, so it works on machines without Qt. To build both targets, omit the options:
 
@@ -63,7 +102,7 @@ cmake -S . -B build-all
 cmake --build build-all --config Release
 ```
 
-### 5. Run domain checks
+#### 6. Run domain checks
 
 ```bash
 make test
@@ -107,4 +146,6 @@ New blocks use a length-prefixed, version-2 hash payload that includes index, pr
 
 `DatabaseManager::initTables()` creates the schema and only converts old text-based expiry/channel columns when their database type requires it. Fresh schemas constrain balances, Internet plans, and IPTV channel counts. Existing malformed legacy expiry strings are converted to `NULL` rather than preventing startup.
 
-The seed data in `scripts/init-db.sql` uses dates relative to `NOW()` so a newly created database has meaningful active/expiring states. Docker runs that seed script only when its PostgreSQL volume is first initialized.
+The schema in `scripts/init-db.sql` is applied only when Docker initializes a new
+PostgreSQL volume. It creates empty `subscribers` and `blocks` tables; persistent
+data is retained across normal `docker compose down` and restart operations.

@@ -4,3 +4,4 @@ main.o
 keys*.txt
 telekom_system
 build-console/
+build-web/
