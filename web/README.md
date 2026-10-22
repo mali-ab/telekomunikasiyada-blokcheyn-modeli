@@ -11,14 +11,15 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
-Open `http://localhost:8080`. The Compose stack runs three services:
+Open `http://localhost:8085`. The Compose stack runs three services:
 
 - `web`: Nginx serving this directory and proxying `/api` requests.
 - `api`: the existing C++ HTTP API and domain implementation.
 - `postgres`: PostgreSQL with a persistent Docker volume.
 
-Use `WEB_PORT` in `.env` to change the browser port. Stop the stack with
-`docker compose down`; add `-v` only when you also want to delete database data.
+Use `WEB_PORT` in `.env` to change the browser port or `API_PORT` to change the
+API's direct host port. Stop the stack with `docker compose down`; add `-v` only
+when you also want to delete database data.
 
 ## Run locally without Nginx
 

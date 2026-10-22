@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASS:-password}
       POSTGRES_DB: ${DB_NAME:-telekom_db}
     ports:
-      - "${DB_PORT:-5434}:5432"
+      - "${DB_PORT:-5435}:5432"
     volumes:
       - telekom_pg_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
@@ -28,6 +28,8 @@ services:
       DB_PASS: ${DB_PASS:-password}
       DB_HOST: postgres
       DB_PORT: 5432
+    ports:
+      - "${API_PORT:-8086}:8081"
     depends_on:
       postgres:
         condition: service_healthy
@@ -38,7 +40,7 @@ services:
       target: web
     restart: unless-stopped
     ports:
-      - "${WEB_PORT:-8080}:80"
+      - "${WEB_PORT:-8085}:80"
     depends_on:
       - api
     healthcheck:

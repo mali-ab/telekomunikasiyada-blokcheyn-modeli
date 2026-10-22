@@ -30,9 +30,10 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
-Open `http://localhost:8080`. Nginx serves the browser UI and proxies `/api` to
-the C++ service; PostgreSQL is exposed on `localhost:5434` for local development.
-Change `WEB_PORT` or `DB_PORT` in `.env` if either port is already in use.
+Open `http://localhost:8085`. Nginx serves the browser UI and proxies `/api` to
+the C++ service. The API is also available directly at `http://localhost:8086`,
+and PostgreSQL is exposed on `localhost:5435` for local development. Change
+`WEB_PORT`, `API_PORT`, or `DB_PORT` in `.env` if a port is already in use.
 
 Useful commands:
 
@@ -54,7 +55,7 @@ cp .env.example .env
 docker compose up -d postgres
 ```
 
-PostgreSQL is exposed on host port `5434` by default.
+PostgreSQL is exposed on host port `5435` by default.
 
 #### 2. Install build dependencies
 
