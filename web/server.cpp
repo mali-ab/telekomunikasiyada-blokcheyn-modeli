@@ -193,7 +193,8 @@ http::response<http::string_body> route(const http::request<Body, http::basic_fi
                 ",\"blocks\":" + std::to_string(chain.getAllBlocks().size()) + ",\"database\":\"Online\"}");
         }
         if (request.method() == http::verb::post && target == "/api/subscribers") {
-            const std::string name = parseBody(request.body()).get<std::string>("name");
+            const pt::ptree body = parseBody(request.body());
+            const std::string name = body.get<std::string>("name");
             if (name.empty() || name.size() > 80) throw std::invalid_argument("Subscriber name must contain 1–80 characters.");
             Subscriber subscriber(name, false);
             if (!SmartContract::createSubscriberInDB(subscriber))
@@ -201,7 +202,7 @@ http::response<http::string_body> route(const http::request<Body, http::basic_fi
             return response(http::status::created, subscriberJson(subscriber));
         }
         if (request.method() == http::verb::post && target == "/api/payments") {
-            const auto body = parseBody(request.body());
+            const pt::ptree body = parseBody(request.body());
             const std::string name = body.get<std::string>("subscriber");
             const double amount = body.get<double>("amount");
             const ServiceType type = serviceType(body.get<std::string>("service"));
